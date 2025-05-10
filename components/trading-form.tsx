@@ -1,27 +1,39 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useMockData } from "@/lib/mock-data-provider"
-import { useWallet } from "@/lib/wallet-provider"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react";
+import { useMockData } from "@/lib/mock-data-provider";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
 
 type TradingFormProps = {
-  artistId: string
-  tokenSymbol: string
-  price: number
-  userTokenBalance: number
-}
+  artistId: string;
+  tokenSymbol: string;
+  price: number;
+  userTokenBalance: number;
+};
 
-export default function TradingForm({ artistId, tokenSymbol, price, userTokenBalance }: TradingFormProps) {
-  const [amount, setAmount] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const { buyTokens, sellTokens } = useMockData()
-  const { balance } = useWallet()
-  const { toast } = useToast()
+export const BALANCE_MOCK = 1000;
+
+export default function TradingForm({
+  artistId,
+  tokenSymbol,
+  price,
+  userTokenBalance,
+}: TradingFormProps) {
+  const [amount, setAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { buyTokens, sellTokens } = useMockData();
+  const balance = BALANCE_MOCK;
+  const { toast } = useToast();
 
   const handleBuy = () => {
     if (!amount || Number.parseFloat(amount) <= 0) {
@@ -29,34 +41,36 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
         title: "Invalid amount",
         description: "Please enter a valid amount.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    const amountValue = Number.parseFloat(amount)
+    const amountValue = Number.parseFloat(amount);
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     setTimeout(() => {
-      const success = buyTokens(artistId, amountValue)
+      const success = buyTokens(artistId, amountValue);
 
       if (success) {
         toast({
           title: "Purchase Successful",
-          description: `You bought ${(amountValue / price).toFixed(4)} $${tokenSymbol} tokens.`,
-        })
-        setAmount("")
+          description: `You bought ${(amountValue / price).toFixed(
+            4
+          )} $${tokenSymbol} tokens.`,
+        });
+        setAmount("");
       } else {
         toast({
           title: "Purchase Failed",
           description: "There was an error processing your purchase.",
           variant: "destructive",
-        })
+        });
       }
 
-      setIsProcessing(false)
-    }, 1500)
-  }
+      setIsProcessing(false);
+    }, 1500);
+  };
 
   const handleSell = () => {
     if (!amount || Number.parseFloat(amount) <= 0) {
@@ -64,46 +78,50 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
         title: "Invalid amount",
         description: "Please enter a valid amount.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    const amountValue = Number.parseFloat(amount)
-    const tokenAmount = amountValue / price
+    const amountValue = Number.parseFloat(amount);
+    const tokenAmount = amountValue / price;
 
     if (tokenAmount > userTokenBalance) {
       toast({
         title: "Insufficient balance",
-        description: `You only have ${userTokenBalance.toFixed(4)} $${tokenSymbol} tokens.`,
+        description: `You only have ${userTokenBalance.toFixed(
+          4
+        )} $${tokenSymbol} tokens.`,
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     setTimeout(() => {
-      const success = sellTokens(artistId, amountValue)
+      const success = sellTokens(artistId, amountValue);
 
       if (success) {
         toast({
           title: "Sale Successful",
-          description: `You sold ${(amountValue / price).toFixed(4)} $${tokenSymbol} tokens.`,
-        })
-        setAmount("")
+          description: `You sold ${(amountValue / price).toFixed(
+            4
+          )} $${tokenSymbol} tokens.`,
+        });
+        setAmount("");
       } else {
         toast({
           title: "Sale Failed",
           description: "There was an error processing your sale.",
           variant: "destructive",
-        })
+        });
       }
 
-      setIsProcessing(false)
-    }, 1500)
-  }
+      setIsProcessing(false);
+    }, 1500);
+  };
 
-  const tokenAmount = amount ? Number.parseFloat(amount) / price : 0
+  const tokenAmount = amount ? Number.parseFloat(amount) / price : 0;
 
   return (
     <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50">
@@ -120,7 +138,9 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
 
           <TabsContent value="buy" className="space-y-4 pt-4">
             <div className="space-y-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Amount (USDC)</label>
+              <label className="text-sm text-gray-600 dark:text-gray-400">
+                Amount ($GHO)
+              </label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -136,12 +156,16 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
                 </span>
               </div>
 
-              <div className="text-xs text-gray-500 dark:text-gray-500">Wallet Balance: {balance.toFixed(2)} USDC</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500">
+                Wallet Balance: {balance.toFixed(2)} $GHO
+              </div>
             </div>
 
             <Button
               onClick={handleBuy}
-              disabled={isProcessing || !amount || Number.parseFloat(amount) <= 0}
+              disabled={
+                isProcessing || !amount || Number.parseFloat(amount) <= 0
+              }
               className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
             >
               {isProcessing ? "Processing..." : "Buy Tokens"}
@@ -150,7 +174,9 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
 
           <TabsContent value="sell" className="space-y-4 pt-4">
             <div className="space-y-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Amount (USDC)</label>
+              <label className="text-sm text-gray-600 dark:text-gray-400">
+                Amount ($GHO)
+              </label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -173,7 +199,12 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
 
             <Button
               onClick={handleSell}
-              disabled={isProcessing || !amount || Number.parseFloat(amount) <= 0 || tokenAmount > userTokenBalance}
+              disabled={
+                isProcessing ||
+                !amount ||
+                Number.parseFloat(amount) <= 0 ||
+                tokenAmount > userTokenBalance
+              }
               className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700"
             >
               {isProcessing ? "Processing..." : "Sell Tokens"}
@@ -182,5 +213,5 @@ export default function TradingForm({ artistId, tokenSymbol, price, userTokenBal
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }

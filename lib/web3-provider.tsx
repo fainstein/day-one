@@ -2,7 +2,6 @@
 
 import React from "react";
 import { WagmiProvider, createConfig, http } from "wagmi";
-// import { polygon } from "wagmi/chains"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 import {
@@ -75,7 +74,7 @@ const wagmiConfig = createConfig(
     //   storage: window ? localStorage : undefined,
     //   key: "lensfairflair",
     // }),
-    appName: "Lens SDK Next.js Starter App",
+    appName: "Day One",
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
     ssr: false,
     ...appConfig.connectkit,
@@ -95,16 +94,16 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <ConnectKitProvider
-          // theme="nous"
+          theme="minimal"
           mode="dark"
           customTheme={{
             "--ck-font-family": '"Shantell Sans", "Comic Sans", cursive',
             "--ck-connectbutton-box-shadow": "0px 1px 2px rgba(0, 0, 0, 0.5)",
-            // "--ck-connectbutton-background": "#47ec93",
+            "--ck-connectbutton-background": "#47ec93",
             "--ck-connectbutton-color": "white",
             "--ck-connectbutton-weight": "bold",
-            // "--ck-connectbutton-hover-background": "#33a367",
-            // "--ck-connectbutton-hover-color": "white",
+            "--ck-connectbutton-hover-background": "#33a367",
+            "--ck-connectbutton-hover-color": "white",
             "--ck-connectbutton-font-size": "18px",
             "--ck-connectbutton-padding": "12px 24px",
             "--ck-connectbutton-border-radius": "8px",

@@ -11,6 +11,8 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@lens-protocol/react": "0.0.0-canary-20250507164041",
+    "@lens-protocol/react-web": "^2.3.2",
+    "@lens-protocol/wagmi": "^4.1.5",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -38,10 +40,12 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@tanstack/react-query": "^5.75.5",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "connectkit": "^1.9.0",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
@@ -58,6 +62,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
+    "wagmi": "^2.15.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {

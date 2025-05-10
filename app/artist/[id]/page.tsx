@@ -1,53 +1,63 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import Image from "next/image"
-import { useMockData } from "@/lib/mock-data-provider"
-import { useWallet } from "@/lib/wallet-provider"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LineChart, TrendingDown, TrendingUp } from "lucide-react"
-import MetricCard from "@/components/metric-card"
-import TradingForm from "@/components/trading-form"
-import PriceLogic from "@/components/price-logic"
-import PriceChart from "@/components/price-chart"
-import { useToast } from "@/components/ui/use-toast"
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import { useMockData } from "@/lib/mock-data-provider";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LineChart, TrendingDown, TrendingUp } from "lucide-react";
+import MetricCard from "@/components/metric-card";
+import TradingForm from "@/components/trading-form";
+import PriceLogic from "@/components/price-logic";
+import PriceChart from "@/components/price-chart";
+import { useParams } from "next/navigation";
 
-export default function ArtistPage({ params }: { params: { id: string } }) {
-  const { getArtist, userBalances } = useMockData()
-  const { isConnected } = useWallet()
-  const { toast } = useToast()
-  const searchParams = useSearchParams()
-  const initialTab = searchParams.get("action") === "buy" ? "buy" : "overview"
+export const IS_CONNECTED_MOCK = true;
 
-  const [artist, setArtist] = useState(getArtist(params.id))
-  const [activeTab, setActiveTab] = useState(initialTab)
+export default function ArtistPage() {
+  const { getArtist, userBalances } = useMockData();
+  const isConnected = IS_CONNECTED_MOCK;
+  const initialTab = "overview";
+
+  const params = useParams<{ id: string }>();
+  const [artist, setArtist] = useState(getArtist(params.id));
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Update artist data when it changes
   useEffect(() => {
     const interval = setInterval(() => {
-      setArtist(getArtist(params.id))
-    }, 1000)
+      setArtist(getArtist(params.id));
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [params.id, getArtist])
+    return () => clearInterval(interval);
+  }, [params.id, getArtist]);
 
   if (!artist) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <p className="text-xl text-gray-400">Artist not found</p>
       </div>
-    )
+    );
   }
 
-  const userTokenBalance = userBalances[artist.tokenSymbol] || 0
+  const userTokenBalance = userBalances[artist.tokenSymbol] || 0;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row gap-6 items-start">
         <div className="w-full md:w-1/3 relative aspect-square rounded-xl overflow-hidden">
-          <Image src={artist.image || "/placeholder.svg"} alt={artist.name} fill className="object-cover" />
+          <Image
+            src={artist.image || "/placeholder.svg"}
+            alt={artist.name}
+            fill
+            className="object-cover"
+          />
         </div>
 
         <div className="w-full md:w-2/3 space-y-6">
@@ -65,11 +75,19 @@ export default function ArtistPage({ params }: { params: { id: string } }) {
             <CardContent className="p-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">Current Price</p>
-                  <p className="text-3xl font-bold font-mono">${artist.price.toFixed(4)}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    Current Price
+                  </p>
+                  <p className="text-3xl font-bold font-mono">
+                    ${artist.price.toFixed(4)}
+                  </p>
                 </div>
                 <div
-                  className={`flex items-center text-lg font-medium ${artist.change24h >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                  className={`flex items-center text-lg font-medium ${
+                    artist.change24h >= 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
                 >
                   {artist.change24h >= 0 ? (
                     <TrendingUp className="h-5 w-5 mr-1" />
@@ -83,7 +101,11 @@ export default function ArtistPage({ params }: { params: { id: string } }) {
             </CardContent>
           </Card>
 
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            defaultValue={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="grid grid-cols-2 bg-gray-100 dark:bg-gray-900">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="buy">Buy / Sell</TabsTrigger>
@@ -134,15 +156,20 @@ export default function ArtistPage({ params }: { params: { id: string } }) {
                   <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50">
                     <CardHeader>
                       <CardTitle>Your Balance</CardTitle>
-                      <CardDescription>Your current token holdings</CardDescription>
+                      <CardDescription>
+                        Your current token holdings
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <span className="text-lg">${artist.tokenSymbol}</span>
-                        <span className="text-lg font-mono">{userTokenBalance.toFixed(4)}</span>
+                        <span className="text-lg font-mono">
+                          {userTokenBalance.toFixed(4)}
+                        </span>
                       </div>
                       <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Value: ${(userTokenBalance * artist.price).toFixed(2)} USDC
+                        Value: ${(userTokenBalance * artist.price).toFixed(2)}{" "}
+                        USDC
                       </div>
                     </CardContent>
                   </Card>
@@ -159,5 +186,5 @@ export default function ArtistPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

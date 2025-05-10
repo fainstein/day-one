@@ -5,10 +5,8 @@ import "./globals.css";
 import Header from "@/components/header";
 import { Toaster } from "@/components/ui/toaster";
 import { MockDataProvider } from "@/lib/mock-data-provider";
-import { WalletProvider } from "@/lib/wallet-provider";
 import { ThemeProvider } from "@/lib/theme-provider";
-import { LensProvider } from "@lens-protocol/react";
-import { client } from "@/wagmi/client";
+import { Web3Provider } from "@/lib/web3-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,10 +24,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider>
-          <MockDataProvider>
-            <LensProvider client={client}>
+      <Web3Provider>
+        <body className={inter.className}>
+          <ThemeProvider>
+            <MockDataProvider>
               <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-100 dark:from-black dark:to-gray-900 text-gray-900 dark:text-white transition-colors duration-200">
                 <Header />
                 <main className="flex-1 container mx-auto px-4 py-8">
@@ -45,10 +43,10 @@ export default function RootLayout({
                 </footer>
               </div>
               <Toaster />
-            </LensProvider>
-          </MockDataProvider>
-        </ThemeProvider>
-      </body>
+            </MockDataProvider>
+          </ThemeProvider>
+        </body>
+      </Web3Provider>
     </html>
   );
 }
