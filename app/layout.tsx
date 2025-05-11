@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { MockDataProvider } from "@/lib/mock-data-provider";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Web3Provider } from "@/lib/web3-provider";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,6 +16,9 @@ export const metadata: Metadata = {
   description:
     "Invest in the future success of artists by purchasing artist-specific tokens",
   generator: "v0.dev",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -36,8 +40,20 @@ export default function RootLayout({
                 <footer className="border-t border-gray-200 dark:border-gray-800 py-6">
                   <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400 text-sm">
                     <p>
-                      This is a demo for ForeTalent – a cultural trading
-                      protocol built for the Lens Hackathon.
+                      Built with ❤️ for the Lens Hackathon by{" "}
+                      <Link
+                        className="underline"
+                        href="https://github.com/fainstein"
+                      >
+                        Nico
+                      </Link>
+                      {" & "}
+                      <Link
+                        className="underline"
+                        href="https://github.com/kevinkuja"
+                      >
+                        Kevin
+                      </Link>
                     </p>
                   </div>
                 </footer>

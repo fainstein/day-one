@@ -75,6 +75,10 @@ const wagmiConfig = createConfig(
     //   key: "lensfairflair",
     // }),
     appName: "Day One",
+    appUrl: "https://day-one-neon.vercel.app/",
+    appDescription:
+      "Day One is a platform for early-stage investing in emerging talent",
+    appIcon: "/favicon.ico",
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
     ssr: false,
     ...appConfig.connectkit,
@@ -93,23 +97,7 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider
-          theme="minimal"
-          mode="dark"
-          customTheme={{
-            "--ck-font-family": '"Shantell Sans", "Comic Sans", cursive',
-            "--ck-connectbutton-box-shadow": "0px 1px 2px rgba(0, 0, 0, 0.5)",
-            "--ck-connectbutton-background": "#47ec93",
-            "--ck-connectbutton-color": "white",
-            "--ck-connectbutton-weight": "bold",
-            "--ck-connectbutton-hover-background": "#33a367",
-            "--ck-connectbutton-hover-color": "white",
-            "--ck-connectbutton-font-size": "18px",
-            "--ck-connectbutton-padding": "12px 24px",
-            "--ck-connectbutton-border-radius": "8px",
-            "--ck-connectbutton-border": "black 1px solid",
-          }}
-        >
+        <ConnectKitProvider theme="soft" mode="dark">
           <LensProvider config={lensConfig}>{children}</LensProvider>
         </ConnectKitProvider>
       </QueryClientProvider>
