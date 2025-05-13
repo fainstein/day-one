@@ -17,17 +17,31 @@ import TradingForm from "@/components/trading-form";
 import PriceLogic from "@/components/price-logic";
 import PriceChart from "@/components/price-chart";
 import { useParams } from "next/navigation";
-
-export const IS_CONNECTED_MOCK = true;
+import { useAccount } from "wagmi";
+import { Button } from "@/components/ui/button";
+import { Role } from "@lens-protocol/react";
+import { useSessionStore } from "@/stores/session-store";
+import CreateAccountModal from "@/components/create-account-modal";
+import ArtistDetailControls from "@/components/artist-detail-controls";
+import useLensAccounts, { LensAccount } from "@/hooks/useLensAccounts";
+import { formatAddress } from "@/lib/utils";
 
 export default function ArtistPage() {
   const { getArtist, userBalances } = useMockData();
-  const isConnected = IS_CONNECTED_MOCK;
-  const initialTab = "overview";
+
+  const { address } = useAccount();
+  const { accounts } = useLensAccounts(address);
+  const { authenticate } = useSessionStore();
+
+  const { session } = useSessionStore();
+  const isAuthenticated = !!session;
 
   const params = useParams<{ id: string }>();
   const [artist, setArtist] = useState(getArtist(params.id));
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] =
+    useState(false);
 
   // Update artist data when it changes
   useEffect(() => {
@@ -37,6 +51,23 @@ export default function ArtistPage() {
 
     return () => clearInterval(interval);
   }, [params.id, getArtist]);
+
+  const handleAuthenticate = async (account: LensAccount) => {
+    if (!address) {
+      throw new Error("No address found");
+    }
+    if (account.role === Role.OnboardingUser) {
+      await authenticate(address, address, Role.OnboardingUser);
+      setIsCreateAccountModalOpen(true);
+    } else {
+      // TODO: Handle other roles
+      await authenticate(
+        account.account.owner,
+        account.account.address,
+        account.role
+      );
+    }
+  };
 
   if (!artist) {
     return (
@@ -50,19 +81,26 @@ export default function ArtistPage() {
 
   return (
     <div className="space-y-8">
+      <CreateAccountModal
+        isOpen={isCreateAccountModalOpen}
+        onClose={() => setIsCreateAccountModalOpen(false)}
+      />
       <div className="flex flex-col md:flex-row gap-6 items-start">
         <div className="w-full md:w-1/3 relative aspect-square rounded-xl overflow-hidden">
           <Image
             src={artist.image || "/placeholder.svg"}
             alt={artist.name}
             fill
-            className="object-cover"
+            className="object-cover rounded-full border border-white/10 shadow-lg backdrop-blur-md"
           />
         </div>
 
         <div className="w-full md:w-2/3 space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">{artist.name}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-3xl font-bold">{artist.name}</h1>
+              <ArtistDetailControls artist={artist} />
+            </div>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-gray-500 dark:text-gray-400">Token:</span>
               <span className="bg-gray-100 dark:bg-gray-800 rounded-full px-3 py-1 text-sm font-medium">
@@ -144,7 +182,7 @@ export default function ArtistPage() {
             </TabsContent>
 
             <TabsContent value="buy" className="pt-4">
-              {isConnected ? (
+              {isAuthenticated ? (
                 <div className="space-y-6">
                   <TradingForm
                     artistId={artist.id}
@@ -168,17 +206,50 @@ export default function ArtistPage() {
                         </span>
                       </div>
                       <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Value: ${(userTokenBalance * artist.price).toFixed(2)}{" "}
-                        USDC
+                        Value: ${(userTokenBalance * artist.price).toFixed(2)}
+                        {" $GHO"}
                       </div>
                     </CardContent>
                   </Card>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
                   <p className="text-xl text-gray-500 dark:text-gray-400 mb-4">
-                    Connect your wallet to buy or sell tokens
+                    Authenticate to buy or sell tokens
                   </p>
+                  {accounts.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No accounts found. Please create an account first.
+                      </p>
+                      <Button
+                        onClick={() =>
+                          handleAuthenticate({
+                            account: null,
+                            role: Role.OnboardingUser,
+                          } as unknown as LensAccount)
+                        }
+                      >
+                        Create Account
+                      </Button>
+                    </div>
+                  )}
+                  {accounts.map((account) => (
+                    <div
+                      className="flex items-center gap-2 justify-evenly w-full"
+                      key={account.account.address}
+                    >
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {formatAddress(account.account.address)}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {account.account.username?.localName || "#"}
+                      </p>
+                      <Button onClick={() => handleAuthenticate(account)}>
+                        Authenticate
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               )}
             </TabsContent>

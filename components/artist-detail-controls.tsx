@@ -1,0 +1,110 @@
+import { Artist } from "@/lib/mock-data-provider";
+import { Button } from "./ui/button";
+import { useEffect, useState } from "react";
+import { useSessionStore } from "@/stores/session-store";
+import { follow, unfollow, fetchAccount } from "@lens-protocol/client/actions";
+import { evmAddress } from "@lens-protocol/client";
+import { handleOperationWith } from "@lens-protocol/client/viem";
+import { useWalletClient } from "wagmi";
+import useLensAccount from "@/hooks/useLensAccount";
+import { never } from "@lens-protocol/react";
+
+export default function ArtistDetailControls({ artist }: { artist: Artist }) {
+  const { account } = useLensAccount(artist.accountAddress);
+  const { session } = useSessionStore();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const { data: walletClient } = useWalletClient();
+
+  useEffect(() => {
+    if (account) {
+      const result = account.operations?.isFollowedByMe;
+      setIsFollowing(!!result);
+    }
+  }, [account]);
+
+  const handleToggleFollow = async () => {
+    if (!session || !walletClient) {
+      console.log("No session or account or walletClient");
+      return;
+    }
+
+    const account = await fetchAccount(session, {
+      address: evmAddress(artist.accountAddress),
+    });
+
+    if (account.isErr()) {
+      console.error("Error fetching account:", account.error);
+      return;
+    }
+
+    const targetAccount = account.value;
+
+    if (!targetAccount) {
+      console.log("No target account");
+      return;
+    }
+
+    const operations = targetAccount.operations;
+
+    if (!operations) {
+      console.log("No operations");
+      return;
+    }
+
+    if (isFollowing) {
+      // Unfollow logic
+      if (operations.isFollowedByMe) {
+        try {
+          const result = await unfollow(session, {
+            account: evmAddress(targetAccount.address),
+          })
+            .andThen(handleOperationWith(walletClient))
+            .andThen(session.waitForTransaction)
+            .andThen((txHash) => {
+              console.log("TX HASH:", txHash);
+              return fetchAccount(session, { txHash });
+            });
+
+          if (result.isOk()) {
+            setIsFollowing(false);
+          }
+        } catch (error) {
+          console.error("Error unfollowing:", error);
+        }
+      }
+    } else {
+      // Follow logic
+      const canFollow = operations.canFollow;
+
+      if (canFollow.__typename === "AccountFollowOperationValidationPassed") {
+        try {
+          const result = await follow(session, {
+            account: evmAddress(targetAccount.address),
+          }).andThen(handleOperationWith(walletClient));
+
+          if (result.isOk()) {
+            setIsFollowing(true);
+          }
+        } catch (error) {
+          console.error("Error following:", error);
+        }
+      } else if (
+        canFollow.__typename === "AccountFollowOperationValidationFailed"
+      ) {
+        console.error("Cannot follow:", canFollow.reason);
+      }
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant={isFollowing ? "outline" : "default"}
+        onClick={handleToggleFollow}
+        disabled={!session}
+      >
+        {isFollowing ? "Unfollow" : "Follow"}
+      </Button>
+    </div>
+  );
+}

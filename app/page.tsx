@@ -23,11 +23,10 @@ export default function Home() {
           <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-yellow-300 to-orange-400">
             they won
           </span>
-          .
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {artists.map((artist) => (
           <ArtistCard key={artist.id} artist={artist} />
         ))}

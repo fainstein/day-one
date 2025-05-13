@@ -1,42 +1,45 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { Address } from "viem";
 
 export type Artist = {
-  id: string
-  name: string
-  tokenSymbol: string
-  image: string
-  price: number
-  change24h: number
-  totalInvested: number
-  priceHistory: { timestamp: number; price: number }[]
+  id: string;
+  name: string;
+  tokenSymbol: string;
+  image: string;
+  price: number;
+  change24h: number;
+  totalInvested: number;
+  accountAddress: Address;
+  priceHistory: { timestamp: number; price: number }[];
   metrics: {
     [key: string]: {
-      name: string
-      value: number
-      history: number[]
-      unit?: string
-      icon: string
-    }
-  }
-}
+      name: string;
+      value: number;
+      history: number[];
+      unit?: string;
+      icon: string;
+    };
+  };
+};
 
 type MockDataContextType = {
-  artists: Artist[]
-  getArtist: (id: string) => Artist | undefined
-  buyTokens: (artistId: string, amount: number) => boolean
-  sellTokens: (artistId: string, amount: number) => boolean
-  userBalances: { [key: string]: number }
-}
+  artists: Artist[];
+  getArtist: (id: string) => Artist | undefined;
+  buyTokens: (artistId: string, amount: number) => boolean;
+  sellTokens: (artistId: string, amount: number) => boolean;
+  userBalances: { [key: string]: number };
+};
 
 const initialArtists: Artist[] = [
   {
     id: "ibai",
     name: "Ibai Llanos",
+    accountAddress: "0x3231E04100A295728F396d26Ad9E4501041A75c2",
     tokenSymbol: "IBAI",
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/ibai.jpg",
     price: 1,
     change24h: 5.2,
     totalInvested: 2500000,
@@ -60,10 +63,11 @@ const initialArtists: Artist[] = [
     },
   },
   {
-    id: "billie",
-    name: "Billie Eilish",
-    tokenSymbol: "BILLIE",
-    image: "/placeholder.svg?height=400&width=400",
+    id: "gaga",
+    name: "Lady Gaga",
+    accountAddress: "0x3231E04100A295728F396d26Ad9E4501041A75c2",
+    tokenSymbol: "GAGA",
+    image: "/Lady Gaga.jpg",
     price: 1,
     change24h: 3.8,
     totalInvested: 4800000,
@@ -89,39 +93,11 @@ const initialArtists: Artist[] = [
     },
   },
   {
-    id: "swift",
-    name: "Taylor Swift",
-    tokenSymbol: "SWIFT",
-    image: "/placeholder.svg?height=400&width=400",
-    price: 1,
-    change24h: 8.7,
-    totalInvested: 7200000,
-    priceHistory: Array.from({ length: 30 }, (_, i) => ({
-      timestamp: Date.now() - (29 - i) * 24 * 60 * 60 * 1000,
-      price: 0.95 + Math.random() * 0.35,
-    })),
-    metrics: {
-      spotify: {
-        name: "Spotify Monthly Listeners",
-        value: 83000000,
-        history: [81000000, 81500000, 82000000, 82500000, 83000000],
-        unit: "M",
-        icon: "music",
-      },
-      instagram: {
-        name: "Instagram Followers",
-        value: 272000000,
-        history: [270000000, 270500000, 271000000, 271500000, 272000000],
-        unit: "M",
-        icon: "instagram",
-      },
-    },
-  },
-  {
     id: "vinci",
     name: "Da Vinci",
+    accountAddress: "0x3231E04100A295728F396d26Ad9E4501041A75c2",
     tokenSymbol: "VINCI",
-    image: "/placeholder.svg?height=400&width=400",
+    image: "/Da Vinci.jpg",
     price: 1,
     change24h: -1.2,
     totalInvested: 1800000,
@@ -144,68 +120,76 @@ const initialArtists: Artist[] = [
       },
     },
   },
-]
+];
 
-const MockDataContext = createContext<MockDataContextType | undefined>(undefined)
+const MockDataContext = createContext<MockDataContextType | undefined>(
+  undefined
+);
 
 export function MockDataProvider({ children }: { children: React.ReactNode }) {
-  const [artists, setArtists] = useState<Artist[]>(initialArtists)
+  const [artists, setArtists] = useState<Artist[]>(initialArtists);
   const [userBalances, setUserBalances] = useState<{ [key: string]: number }>({
     IBAI: 10,
-    BILLIE: 5,
-    SWIFT: 3,
-    VINCI: 15,
-  })
+    GAGA: 5,
+    VINCI: 3,
+  });
 
   // Function to update metrics and prices
   const updateMetricsAndPrices = () => {
     setArtists((prevArtists) => {
       return prevArtists.map((artist) => {
         // Update each metric with a small random change
-        const updatedMetrics = { ...artist.metrics }
+        const updatedMetrics = { ...artist.metrics };
 
         Object.keys(updatedMetrics).forEach((key) => {
-          const metric = updatedMetrics[key]
+          const metric = updatedMetrics[key];
           // Random change between -0.5% and +1.5%
-          const changePercent = -0.5 + Math.random() * 2
-          const newValue = Math.round(metric.value * (1 + changePercent / 100))
+          const changePercent = -0.5 + Math.random() * 2;
+          const newValue = Math.round(metric.value * (1 + changePercent / 100));
 
           // Update history
-          const newHistory = [...metric.history.slice(1), newValue]
+          const newHistory = [...metric.history.slice(1), newValue];
 
           updatedMetrics[key] = {
             ...metric,
             value: newValue,
             history: newHistory,
-          }
-        })
+          };
+        });
 
         // Calculate new price based on metrics growth
-        const metricValues = Object.values(updatedMetrics)
+        const metricValues = Object.values(updatedMetrics);
         const metricGrowths = metricValues.map((metric) => {
-          const oldValue = metric.history[0]
-          const newValue = metric.value
-          return newValue / oldValue
-        })
+          const oldValue = metric.history[0];
+          const newValue = metric.value;
+          return newValue / oldValue;
+        });
 
         // Average growth across all metrics
-        const avgGrowth = metricGrowths.reduce((sum, growth) => sum + growth, 0) / metricGrowths.length
+        const avgGrowth =
+          metricGrowths.reduce((sum, growth) => sum + growth, 0) /
+          metricGrowths.length;
 
         // New price based on growth
-        const newPrice = Math.max(0.1, artist.price * (0.997 + avgGrowth * 0.003))
+        const newPrice = Math.max(
+          0.1,
+          artist.price * (0.997 + avgGrowth * 0.003)
+        );
 
         // Calculate 24h change
-        const change24h = ((newPrice - artist.price) / artist.price) * 100 + artist.change24h * 0.95
+        const change24h =
+          ((newPrice - artist.price) / artist.price) * 100 +
+          artist.change24h * 0.95;
 
         // Update price history
-        const newPriceHistory = [...artist.priceHistory]
+        const newPriceHistory = [...artist.priceHistory];
         if (newPriceHistory.length > 100) {
-          newPriceHistory.shift() // Remove oldest price point if we have more than 100
+          newPriceHistory.shift(); // Remove oldest price point if we have more than 100
         }
         newPriceHistory.push({
           timestamp: Date.now(),
           price: Number.parseFloat(newPrice.toFixed(4)),
-        })
+        });
 
         return {
           ...artist,
@@ -213,36 +197,34 @@ export function MockDataProvider({ children }: { children: React.ReactNode }) {
           change24h: Number.parseFloat(change24h.toFixed(2)),
           priceHistory: newPriceHistory,
           metrics: updatedMetrics,
-        }
-      })
-    })
-  }
+        };
+      });
+    });
+  };
 
   // Update metrics and prices every 5-10 seconds
   useEffect(() => {
-    const interval = setInterval(
-      () => {
-        updateMetricsAndPrices()
-      },
-      5000 + Math.random() * 5000,
-    )
+    const interval = setInterval(() => {
+      updateMetricsAndPrices();
+    }, 5000 + Math.random() * 5000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
 
   const getArtist = (id: string) => {
-    return artists.find((artist) => artist.id === id)
-  }
+    return artists.find((artist) => artist.id === id);
+  };
 
   const buyTokens = (artistId: string, amount: number) => {
-    const artist = getArtist(artistId)
-    if (!artist) return false
+    const artist = getArtist(artistId);
+    if (!artist) return false;
 
     // Update user balance
     setUserBalances((prev) => ({
       ...prev,
-      [artist.tokenSymbol]: (prev[artist.tokenSymbol] || 0) + amount / artist.price,
-    }))
+      [artist.tokenSymbol]:
+        (prev[artist.tokenSymbol] || 0) + amount / artist.price,
+    }));
 
     // Update total invested
     setArtists((prevArtists) => {
@@ -251,42 +233,44 @@ export function MockDataProvider({ children }: { children: React.ReactNode }) {
           return {
             ...a,
             totalInvested: a.totalInvested + amount,
-          }
+          };
         }
-        return a
-      })
-    })
+        return a;
+      });
+    });
 
-    return true
-  }
+    return true;
+  };
 
   const sellTokens = (artistId: string, amount: number) => {
-    const artist = getArtist(artistId)
-    if (!artist) return false
+    const artist = getArtist(artistId);
+    if (!artist) return false;
 
-    const currentBalance = userBalances[artist.tokenSymbol] || 0
-    if (amount / artist.price > currentBalance) return false
+    const currentBalance = userBalances[artist.tokenSymbol] || 0;
+    if (amount / artist.price > currentBalance) return false;
 
     // Update user balance
     setUserBalances((prev) => ({
       ...prev,
       [artist.tokenSymbol]: prev[artist.tokenSymbol] - amount / artist.price,
-    }))
+    }));
 
-    return true
-  }
+    return true;
+  };
 
   return (
-    <MockDataContext.Provider value={{ artists, getArtist, buyTokens, sellTokens, userBalances }}>
+    <MockDataContext.Provider
+      value={{ artists, getArtist, buyTokens, sellTokens, userBalances }}
+    >
       {children}
     </MockDataContext.Provider>
-  )
+  );
 }
 
 export function useMockData() {
-  const context = useContext(MockDataContext)
+  const context = useContext(MockDataContext);
   if (context === undefined) {
-    throw new Error("useMockData must be used within a MockDataProvider")
+    throw new Error("useMockData must be used within a MockDataProvider");
   }
-  return context
+  return context;
 }

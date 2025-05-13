@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
@@ -12,11 +12,14 @@ import {
 } from "@lens-protocol/react-web";
 import { bindings } from "@lens-protocol/wagmi";
 import { BLOCK_EXPLORER_URL, RPC_PROVIDER_URL } from "@/lib/constants";
+import { PublicClient, testnet } from "@lens-protocol/client";
+import { fragments } from "@/fragments";
+import WalletClientProvider from "./wallet-client-provider";
 
 // connect kit doesn't export the config type, so we create it here
 type ConnectKitConfig = Parameters<typeof getDefaultConfig>[0];
 
-const lensSepolia = {
+export const lensSepolia = {
   id: 37111,
   name: "Lens Network Sepolia Testnet",
   nativeCurrency: {
@@ -75,7 +78,10 @@ const wagmiConfig = createConfig(
     //   key: "lensfairflair",
     // }),
     appName: "Day One",
-    appUrl: "https://day-one-neon.vercel.app/",
+    appUrl:
+      process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : "https://day-one-neon.vercel.app/",
     appDescription:
       "Day One is a platform for early-stage investing in emerging talent",
     appIcon: "/favicon.ico",
@@ -98,9 +104,16 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <ConnectKitProvider theme="soft" mode="dark">
-          <LensProvider config={lensConfig}>{children}</LensProvider>
+          <WalletClientProvider>
+            <LensProvider config={lensConfig}>{children}</LensProvider>
+          </WalletClientProvider>
         </ConnectKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
 }
+
+export const lensClient = PublicClient.create({
+  environment: testnet,
+  // fragments,
+});

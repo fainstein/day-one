@@ -1,39 +1,44 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { ArrowUpRight, Banknote, TrendingDown, TrendingUp } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import type { Artist } from "@/lib/mock-data-provider"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ArrowUpRight, Banknote, TrendingDown, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import type { Artist } from "@/lib/mock-data-provider";
 
 type ArtistCardProps = {
-  artist: Artist
-}
+  artist: Artist;
+};
 
 export default function ArtistCard({ artist }: ArtistCardProps) {
-  const [currentPrice, setCurrentPrice] = useState(artist.price)
-  const [priceChange, setPriceChange] = useState(0)
+  const [currentPrice, setCurrentPrice] = useState(artist.price);
+  const [priceChange, setPriceChange] = useState(0);
 
   // Update price when artist price changes
   useEffect(() => {
-    const oldPrice = currentPrice
-    setCurrentPrice(artist.price)
-    setPriceChange(artist.price - oldPrice)
-  }, [artist.price, currentPrice])
+    const oldPrice = currentPrice;
+    setCurrentPrice(artist.price);
+    setPriceChange(artist.price - oldPrice);
+  }, [artist.price, currentPrice]);
 
   // Format large numbers
   const formatNumber = (num: number) => {
-    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`
-    if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`
-    return `$${num.toFixed(0)}`
-  }
+    if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+    return `$${num.toFixed(0)}`;
+  };
 
   return (
     <Card className="overflow-hidden border-gray-200 dark:border-gray-800 bg-white dark:bg-gradient-to-b dark:from-gray-900 dark:to-black hover:shadow-lg dark:hover:shadow-purple-900/20 transition-all duration-300">
-      <div className="relative h-48 overflow-hidden">
-        <Image src={artist.image || "/placeholder.svg"} alt={artist.name} fill className="object-cover" />
+      <div className="relative h-56 overflow-hidden">
+        <Image
+          src={artist.image || "/placeholder.svg"}
+          alt={artist.name}
+          fill
+          className="object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
         <div className="absolute bottom-2 left-3 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium text-white">
           ${artist.tokenSymbol}
@@ -48,14 +53,22 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
               ${currentPrice.toFixed(4)}
               {priceChange !== 0 && (
                 <span
-                  className={`ml-1 text-xs ${priceChange > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                  className={`ml-1 text-xs ${
+                    priceChange > 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
                 >
                   {priceChange > 0 ? "↑" : "↓"}
                 </span>
               )}
             </div>
             <div
-              className={`text-sm font-medium flex items-center ${artist.change24h >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+              className={`text-sm font-medium flex items-center ${
+                artist.change24h >= 0
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
             >
               {artist.change24h >= 0 ? (
                 <TrendingUp className="h-3 w-3 mr-1" />
@@ -70,7 +83,9 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
 
         <div className="flex items-center mt-3 text-gray-600 dark:text-gray-400">
           <Banknote className="h-4 w-4 mr-1" />
-          <span className="text-sm">TVL: {formatNumber(artist.totalInvested)}</span>
+          <span className="text-sm">
+            Net Worth: {formatNumber(artist.totalInvested)}
+          </span>
         </div>
       </CardContent>
 
@@ -90,9 +105,9 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           className="flex-1 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
           asChild
         >
-          <Link href={`/artist/${artist.id}?action=buy`}>Buy</Link>
+          <Link href={`/artist/${artist.id}`}>Buy</Link>
         </Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
