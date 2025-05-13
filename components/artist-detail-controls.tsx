@@ -32,6 +32,8 @@ export default function ArtistDetailControls({ artist }: { artist: Artist }) {
       address: evmAddress(artist.accountAddress),
     });
 
+    console.log("fetchAccount", account);
+
     if (account.isErr()) {
       console.error("Error fetching account:", account.error);
       return;
@@ -61,7 +63,7 @@ export default function ArtistDetailControls({ artist }: { artist: Artist }) {
             .andThen(handleOperationWith(walletClient))
             .andThen(session.waitForTransaction)
             .andThen((txHash) => {
-              console.log("TX HASH:", txHash);
+              console.log("UNFOLLOW TX HASH:", txHash);
               return fetchAccount(session, { txHash });
             });
 
@@ -80,7 +82,13 @@ export default function ArtistDetailControls({ artist }: { artist: Artist }) {
         try {
           const result = await follow(session, {
             account: evmAddress(targetAccount.address),
-          }).andThen(handleOperationWith(walletClient));
+          })
+            .andThen(handleOperationWith(walletClient))
+            .andThen(session.waitForTransaction)
+            .andThen((txHash) => {
+              console.log("FOLLOW TX HASH:", txHash);
+              return fetchAccount(session, { txHash });
+            });
 
           if (result.isOk()) {
             setIsFollowing(true);

@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useSessionStore } from "@/stores/session-store";
+import useLensAccount from "@/hooks/useLensAccount";
 
 type TradingFormProps = {
   artistId: string;
@@ -21,7 +23,9 @@ type TradingFormProps = {
   userTokenBalance: number;
 };
 
+// TODO: Implement balance from Lens
 export const BALANCE_MOCK = 1000;
+const balance = BALANCE_MOCK;
 
 export default function TradingForm({
   artistId,
@@ -31,12 +35,11 @@ export default function TradingForm({
 }: TradingFormProps) {
   const [amount, setAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const { buyTokens, sellTokens } = useMockData();
-  const balance = BALANCE_MOCK;
   const { toast } = useToast();
-
+  const { session } = useSessionStore();
+  const { account } = useLensAccount();
   const handleBuy = () => {
-    if (!amount || Number.parseFloat(amount) <= 0) {
+    if (!amount || Number.parseFloat(amount) <= 0 || !session) {
       toast({
         title: "Invalid amount",
         description: "Please enter a valid amount.",
@@ -46,32 +49,8 @@ export default function TradingForm({
     }
 
     const amountValue = Number.parseFloat(amount);
-
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      const success = buyTokens(artistId, amountValue);
-
-      if (success) {
-        toast({
-          title: "Purchase Successful",
-          description: `You bought ${(amountValue / price).toFixed(
-            4
-          )} $${tokenSymbol} tokens.`,
-        });
-        setAmount("");
-      } else {
-        toast({
-          title: "Purchase Failed",
-          description: "There was an error processing your purchase.",
-          variant: "destructive",
-        });
-      }
-
-      setIsProcessing(false);
-    }, 1500);
+    console.log("Buying", amountValue);
   };
-
   const handleSell = () => {
     if (!amount || Number.parseFloat(amount) <= 0) {
       toast({
@@ -83,42 +62,9 @@ export default function TradingForm({
     }
 
     const amountValue = Number.parseFloat(amount);
-    const tokenAmount = amountValue / price;
-
-    if (tokenAmount > userTokenBalance) {
-      toast({
-        title: "Insufficient balance",
-        description: `You only have ${userTokenBalance.toFixed(
-          4
-        )} $${tokenSymbol} tokens.`,
-        variant: "destructive",
-      });
-      return;
-    }
 
     setIsProcessing(true);
-
-    setTimeout(() => {
-      const success = sellTokens(artistId, amountValue);
-
-      if (success) {
-        toast({
-          title: "Sale Successful",
-          description: `You sold ${(amountValue / price).toFixed(
-            4
-          )} $${tokenSymbol} tokens.`,
-        });
-        setAmount("");
-      } else {
-        toast({
-          title: "Sale Failed",
-          description: "There was an error processing your sale.",
-          variant: "destructive",
-        });
-      }
-
-      setIsProcessing(false);
-    }, 1500);
+    console.log("Selling", amountValue);
   };
 
   const tokenAmount = amount ? Number.parseFloat(amount) / price : 0;
