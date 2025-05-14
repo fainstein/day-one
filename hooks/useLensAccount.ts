@@ -3,17 +3,24 @@ import { fetchAccount } from "@lens-protocol/client/actions";
 import { useEffect, useState } from "react";
 import { Address } from "viem";
 import { useSessionStore } from "@/stores/session-store";
+import { PublicClient } from "@lens-protocol/react";
+import { lensClient } from "@/lib/web3-provider";
 
-export default function useLensAccount(accountAddress?: Address): {
+export default function useLensAccount(
+  accountAddress?: Address,
+  usePublicClient?: boolean
+): {
   account: Account | null;
 } {
   const [account, setAccount] = useState<Account | null>(null);
   const { session } = useSessionStore();
 
   useEffect(() => {
-    if (!accountAddress || !session) return;
+    const clientToUse = usePublicClient ? lensClient : session;
     const fn = async () => {
-      const result = await fetchAccount(session, {
+      if (!accountAddress || !clientToUse) return;
+
+      const result = await fetchAccount(clientToUse, {
         address: evmAddress(accountAddress),
       });
 

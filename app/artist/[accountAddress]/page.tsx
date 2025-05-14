@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { useMockData } from "@/lib/mock-data-provider";
 import {
   Card,
   CardContent,
@@ -25,9 +24,11 @@ import CreateAccountModal from "@/components/create-account-modal";
 import ArtistDetailControls from "@/components/artist-detail-controls";
 import useLensAccounts, { LensAccount } from "@/hooks/useLensAccounts";
 import { formatAddress } from "@/lib/utils";
+import useArtist from "@/hooks/useArtist";
+import { Address } from "viem";
 
 export default function ArtistPage() {
-  const { getArtist, userBalances } = useMockData();
+  const params = useParams<{ accountAddress: string }>();
 
   const { address } = useAccount();
   const { accounts } = useLensAccounts(address);
@@ -36,22 +37,14 @@ export default function ArtistPage() {
   const { session } = useSessionStore();
   const isAuthenticated = !!session;
 
-  const params = useParams<{ id: string }>();
-  const [artist, setArtist] = useState(getArtist(params.id));
+  const artist = useArtist(params.accountAddress as Address);
+
   const [activeTab, setActiveTab] = useState("overview");
 
   const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] =
     useState(false);
 
   // Update artist data when it changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setArtist(getArtist(params.id));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [params.id, getArtist]);
-
   const handleAuthenticate = async (account: LensAccount) => {
     if (!address) {
       throw new Error("No address found");
@@ -77,7 +70,7 @@ export default function ArtistPage() {
     );
   }
 
-  const userTokenBalance = userBalances[artist.tokenSymbol] || 0;
+  const userTokenBalance = 0;
 
   return (
     <div className="space-y-8">
@@ -185,7 +178,7 @@ export default function ArtistPage() {
               {isAuthenticated ? (
                 <div className="space-y-6">
                   <TradingForm
-                    artistId={artist.id}
+                    artistAccountAddress={artist.accountAddress}
                     tokenSymbol={artist.tokenSymbol}
                     price={artist.price}
                     userTokenBalance={userTokenBalance}

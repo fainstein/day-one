@@ -7,12 +7,15 @@ import { ArrowUpRight, Banknote, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type { Artist } from "@/lib/mock-data-provider";
+import { Address } from "viem";
+import useArtist from "@/hooks/useArtist";
 
 type ArtistCardProps = {
-  artist: Artist;
+  accountAddress: Address;
 };
 
-export default function ArtistCard({ artist }: ArtistCardProps) {
+export default function ArtistCard({ accountAddress }: ArtistCardProps) {
+  const artist = useArtist(accountAddress);
   const [currentPrice, setCurrentPrice] = useState(artist.price);
   const [priceChange, setPriceChange] = useState(0);
 
@@ -21,7 +24,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
     const oldPrice = currentPrice;
     setCurrentPrice(artist.price);
     setPriceChange(artist.price - oldPrice);
-  }, [artist.price, currentPrice]);
+  }, [currentPrice]);
 
   // Format large numbers
   const formatNumber = (num: number) => {
@@ -34,7 +37,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
     <Card className="overflow-hidden border-gray-200 dark:border-gray-800 bg-white dark:bg-gradient-to-b dark:from-gray-900 dark:to-black hover:shadow-lg dark:hover:shadow-purple-900/20 transition-all duration-300">
       <div className="relative h-56 overflow-hidden">
         <Image
-          src={artist.image || "/placeholder.svg"}
+          src={artist.image}
           alt={artist.name}
           fill
           className="object-cover"
@@ -50,7 +53,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           <h3 className="text-lg font-bold">{artist.name}</h3>
           <div className="flex flex-col items-end">
             <div className="text-lg font-mono font-bold">
-              ${currentPrice.toFixed(4)}
+              ${artist.price.toFixed(4)}
               {priceChange !== 0 && (
                 <span
                   className={`ml-1 text-xs ${
@@ -95,7 +98,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           className="flex-1 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white"
           asChild
         >
-          <Link href={`/artist/${artist.id}`}>
+          <Link href={`/artist/${accountAddress}`}>
             View Details
             <ArrowUpRight className="ml-1 h-4 w-4" />
           </Link>
@@ -105,7 +108,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           className="flex-1 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700"
           asChild
         >
-          <Link href={`/artist/${artist.id}`}>Buy</Link>
+          <Link href={`/artist/${accountAddress}`}>Buy</Link>
         </Button>
       </CardFooter>
     </Card>

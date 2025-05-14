@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useMockData } from "@/lib/mock-data-provider";
 import {
   Card,
   CardContent,
@@ -15,9 +14,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useSessionStore } from "@/stores/session-store";
 import useLensAccount from "@/hooks/useLensAccount";
+import { blockchainData, evmAddress } from "@lens-protocol/client";
+import {
+  executeAccountAction,
+  fetchAccount,
+} from "@lens-protocol/client/actions";
+import { Address, parseUnits, toBytes } from "viem";
+import { handleOperationWith } from "@lens-protocol/client/viem";
+import {
+  BUY_TOKEN_ACTION_ADDRESS,
+  SELL_TOKEN_ACTION_ADDRESS,
+} from "@/app/admin/[artistAccountAddress]/page";
 
 type TradingFormProps = {
-  artistId: string;
+  artistAccountAddress: Address;
   tokenSymbol: string;
   price: number;
   userTokenBalance: number;
@@ -28,7 +38,7 @@ export const BALANCE_MOCK = 1000;
 const balance = BALANCE_MOCK;
 
 export default function TradingForm({
-  artistId,
+  artistAccountAddress,
   tokenSymbol,
   price,
   userTokenBalance,
@@ -36,10 +46,15 @@ export default function TradingForm({
   const [amount, setAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  const { session } = useSessionStore();
-  const { account } = useLensAccount();
-  const handleBuy = () => {
-    if (!amount || Number.parseFloat(amount) <= 0 || !session) {
+  const { session, walletClient } = useSessionStore();
+
+  const handleBuy = async () => {
+    if (
+      !amount ||
+      Number.parseFloat(amount) <= 0 ||
+      !session ||
+      !walletClient
+    ) {
       toast({
         title: "Invalid amount",
         description: "Please enter a valid amount.",
@@ -49,22 +64,73 @@ export default function TradingForm({
     }
 
     const amountValue = Number.parseFloat(amount);
-    console.log("Buying", amountValue);
-  };
-  const handleSell = () => {
-    if (!amount || Number.parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid amount.",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    const amountValue = Number.parseFloat(amount);
+    const parsedAmount = parseUnits(amountValue.toFixed(18), 18);
 
     setIsProcessing(true);
-    console.log("Selling", amountValue);
+
+    await executeAccountAction(session, {
+      account: evmAddress(artistAccountAddress),
+      action: {
+        unknown: {
+          address: evmAddress(BUY_TOKEN_ACTION_ADDRESS),
+          params: [
+            {
+              data: blockchainData(parsedAmount.toString()),
+              key: blockchainData("lens.param.amount"),
+            },
+          ],
+        },
+      },
+    })
+      .andThen(handleOperationWith(walletClient))
+      .andThen(session.waitForTransaction)
+      .andThen((txHash) => {
+        console.log("TX HASH:", txHash);
+        return fetchAccount(session, { txHash });
+      });
+  };
+  const handleSell = async () => {
+    if (
+      !amount ||
+      Number.parseFloat(amount) <= 0 ||
+      !session ||
+      !walletClient
+    ) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amountValue = Number.parseFloat(amount);
+
+    const parsedAmount = parseUnits(amountValue.toFixed(18), 18);
+
+    setIsProcessing(true);
+
+    await executeAccountAction(session, {
+      account: evmAddress(artistAccountAddress),
+      action: {
+        unknown: {
+          address: evmAddress(SELL_TOKEN_ACTION_ADDRESS),
+          params: [
+            {
+              data: blockchainData(parsedAmount.toString()),
+              key: blockchainData("lens.param.amount"),
+            },
+          ],
+        },
+      },
+    })
+      .andThen(handleOperationWith(walletClient))
+      .andThen(session.waitForTransaction)
+      .andThen((txHash) => {
+        console.log("TX HASH:", txHash);
+        return fetchAccount(session, { txHash });
+      });
   };
 
   const tokenAmount = amount ? Number.parseFloat(amount) / price : 0;
