@@ -25,6 +25,7 @@ import {
   BUY_TOKEN_ACTION_ADDRESS,
   SELL_TOKEN_ACTION_ADDRESS,
 } from "@/app/admin/[artistAccountAddress]/page";
+import useArtist from "@/hooks/useArtist";
 
 type TradingFormProps = {
   artistAccountAddress: Address;
@@ -47,6 +48,7 @@ export default function TradingForm({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { session, walletClient } = useSessionStore();
+  const { tokenAddress } = useArtist(artistAccountAddress);
 
   const handleBuy = async () => {
     if (
@@ -75,6 +77,10 @@ export default function TradingForm({
         unknown: {
           address: evmAddress(BUY_TOKEN_ACTION_ADDRESS),
           params: [
+            {
+              data: blockchainData(tokenAddress),
+              key: blockchainData("lens.param.tokenAddress"),
+            },
             {
               data: blockchainData(parsedAmount.toString()),
               key: blockchainData("lens.param.amount"),
@@ -117,6 +123,10 @@ export default function TradingForm({
         unknown: {
           address: evmAddress(SELL_TOKEN_ACTION_ADDRESS),
           params: [
+            {
+              data: blockchainData(tokenAddress),
+              key: blockchainData("lens.param.tokenAddress"),
+            },
             {
               data: blockchainData(parsedAmount.toString()),
               key: blockchainData("lens.param.amount"),

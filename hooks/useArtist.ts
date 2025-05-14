@@ -28,6 +28,9 @@ export default function useArtist(accountAddress: Address): Artist {
     totalInvested: DUMMY_NET_WORTH,
     accountAddress: accountAddress,
     priceHistory: DUMMY_PRICE_HISTORY,
+    tokenAddress: account?.metadata?.attributes.find(
+      (attr) => attr.key === "token"
+    )?.value as Address,
     metrics: DUMMY_METRICS,
   };
 

@@ -31,35 +31,33 @@ export default function RootLayout({
       <Web3Provider>
         <body className={inter.className}>
           <ThemeProvider>
-            <MockDataProvider>
-              <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-100 dark:from-black dark:to-gray-900 text-gray-900 dark:text-white transition-colors duration-200">
-                <Header />
-                <main className="flex-1 container mx-auto px-4 py-8">
-                  {children}
-                </main>
-                <footer className="border-t border-gray-200 dark:border-gray-800 py-6">
-                  <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400 text-sm">
-                    <p>
-                      Built with ❤️ for the Lens Hackathon by{" "}
-                      <Link
-                        className="underline"
-                        href="https://github.com/fainstein"
-                      >
-                        Nico
-                      </Link>
-                      {" & "}
-                      <Link
-                        className="underline"
-                        href="https://github.com/kevinkuja"
-                      >
-                        Kevin
-                      </Link>
-                    </p>
-                  </div>
-                </footer>
-              </div>
-              <Toaster />
-            </MockDataProvider>
+            <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-100 dark:from-black dark:to-gray-900 text-gray-900 dark:text-white transition-colors duration-200">
+              <Header />
+              <main className="flex-1 container mx-auto px-4 py-8">
+                {children}
+              </main>
+              <footer className="border-t border-gray-200 dark:border-gray-800 py-6">
+                <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400 text-sm">
+                  <p>
+                    Built with ❤️ for the Lens Hackathon by{" "}
+                    <Link
+                      className="underline"
+                      href="https://github.com/fainstein"
+                    >
+                      Nico
+                    </Link>
+                    {" & "}
+                    <Link
+                      className="underline"
+                      href="https://github.com/kevinkuja"
+                    >
+                      Kevin
+                    </Link>
+                  </p>
+                </div>
+              </footer>
+            </div>
+            <Toaster />
           </ThemeProvider>
         </body>
       </Web3Provider>
