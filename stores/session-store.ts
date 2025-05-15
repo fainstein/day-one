@@ -11,6 +11,7 @@ export const LENS_APP_TESTNET_EXAMPLE =
 export type SessionState = {
   session: SessionClient | null;
   walletClient: WalletClient | null;
+  accountAddress: Address | null;
 };
 
 export type SessionActions = {
@@ -28,9 +29,13 @@ export type SessionStore = SessionState & SessionActions;
 const defaultInitState: SessionState = {
   session: null,
   walletClient: null,
+  accountAddress: null,
 };
 
-const authenticateOnboardingUser = async (walletAddress: Address) => {
+const authenticateOnboardingUser = async (
+  walletAddress: Address,
+  accountAddress: Address
+) => {
   const walletClient = useSessionStore.getState().walletClient;
   if (!walletClient) {
     throw new Error("Wallet client not found");
@@ -52,6 +57,7 @@ const authenticateOnboardingUser = async (walletAddress: Address) => {
   useSessionStore.setState((state) => ({
     ...state,
     session,
+    accountAddress,
   }));
 };
 
@@ -84,6 +90,7 @@ const authenticateAccountOwnerUser = async (
   useSessionStore.setState((state) => ({
     ...state,
     session: sessionClient,
+    accountAddress,
   }));
 };
 
@@ -93,7 +100,7 @@ export const authenticate = async (
   role: Role
 ) => {
   if (role === Role.OnboardingUser) {
-    await authenticateOnboardingUser(walletAddress);
+    await authenticateOnboardingUser(walletAddress, accountAddress);
     return;
   } else if (role === Role.AccountOwner) {
     await authenticateAccountOwnerUser(walletAddress, accountAddress);

@@ -13,26 +13,29 @@ import {
 } from "@lens-protocol/client/actions";
 import { useParams } from "next/navigation";
 import { Address } from "viem";
-import { evmAddress } from "@lens-protocol/client";
+import { blockchainData, evmAddress } from "@lens-protocol/client";
 import { configureAccountAction } from "@lens-protocol/client/actions";
 import { handleOperationWith } from "@lens-protocol/client/viem";
 import { account, MetadataAttributeType } from "@lens-protocol/metadata";
 import { immutable } from "@lens-chain/storage-client";
 import { lensSepolia } from "@/lib/web3-provider";
+import {
+  BUY_ARTIST_TOKEN_ACTION,
+  DAVINCI_TOKEN,
+  DOECHII_TOKEN,
+  SELL_ARTIST_TOKEN_ACTION,
+} from "@/lib/constants";
 
-export const BUY_TOKEN_ACTION_ADDRESS =
-  "0x0000000000000000000000000000000000000000";
-export const SELL_TOKEN_ACTION_ADDRESS =
-  "0x0000000000000000000000000000000000000000";
-
-const NEW_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
-
-// 1. Replace addresses for buy and sell actions
+// 1. Replace addresses for buy and sell actions (OK)
 // 2. For each artist, replace the token address in the attributes
 // 3. Log in as the artist account owner, and update the metadata
 // 4. Then, add actions to the account
 
 // IMPORTANT. YOU NEED TO LOG IN AS THE ARTIST ACCOUNT OWNER TO ADD ACTIONS TO THE ACCOUNT
+
+const UNIVERSAL_ACTION_KEY =
+  "0xa12c06eea999f2a08fb2bd50e396b2a286921eebbda81fb45a0adcf13afb18ef"; // keccak256("lens.param.universal")
+
 export default function AdminPage() {
   const { address } = useAccount();
   const { storageClient } = useStorageClientStore();
@@ -42,7 +45,7 @@ export default function AdminPage() {
     artistAccountAddress: Address;
   }>();
 
-  const addActionsToArtistAccount = async () => {
+  const addBuyActionAsAccountManager = async () => {
     if (!storageClient || !session || !walletClient) {
       throw new Error("Storage client or session not found");
     }
@@ -55,8 +58,9 @@ export default function AdminPage() {
       throw new Error("Artist account not found");
     }
 
+    console.log("Adding buy token action");
     await addAccountManager(session, {
-      address: evmAddress(BUY_TOKEN_ACTION_ADDRESS),
+      address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
       permissions: {
         canExecuteTransactions: true,
         canTransferTokens: false,
@@ -70,9 +74,24 @@ export default function AdminPage() {
         console.log("ADD BUY TOKEN ACTION TX HASH:", txHash);
         return fetchAccount(session, { txHash });
       });
+  };
 
+  const addSellActionAsAccountManager = async () => {
+    if (!storageClient || !session || !walletClient) {
+      throw new Error("Storage client or session not found");
+    }
+
+    const artistAccount = await fetchAccount(session, {
+      address: artistAccountAddress,
+    });
+
+    if (artistAccount.isErr()) {
+      throw new Error("Artist account not found");
+    }
+
+    console.log("Adding sell token action");
     await addAccountManager(session, {
-      address: evmAddress(SELL_TOKEN_ACTION_ADDRESS),
+      address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
       permissions: {
         canExecuteTransactions: true,
         canTransferTokens: false,
@@ -86,26 +105,66 @@ export default function AdminPage() {
         console.log("ADD SELL TOKEN ACTION TX HASH:", txHash);
         return fetchAccount(session, { txHash });
       });
+  };
 
+  const configureBuyAction = async () => {
+    if (!storageClient || !session || !walletClient) {
+      throw new Error("Storage client or session not found");
+    }
+
+    const artistAccount = await fetchAccount(session, {
+      address: artistAccountAddress,
+    });
+
+    if (artistAccount.isErr()) {
+      throw new Error("Artist account not found");
+    }
+
+    console.log("Configuring buy token action", artistAccount.value?.address);
     await configureAccountAction(session, {
       action: {
         unknown: {
-          address: evmAddress(BUY_TOKEN_ACTION_ADDRESS),
-          params: [],
+          address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
+          params: [
+            {
+              raw: {
+                key: blockchainData(UNIVERSAL_ACTION_KEY),
+                data: blockchainData("0x00"), // puede ser cualquier valor dummy
+              },
+            },
+          ],
         },
       },
     })
-      .andThen(handleOperationWith(walletClient))
+      .andThen((args) => {
+        console.log("CONFIGURE BUY TOKEN ACTION ARGS:", args);
+        return handleOperationWith(walletClient)(args);
+      })
       .andThen(session.waitForTransaction)
       .andThen((txHash) => {
         console.log("CONFIGURE BUY TOKEN ACTION TX HASH:", txHash);
         return fetchAccount(session, { txHash });
       });
+  };
 
+  const configureSellAction = async () => {
+    if (!storageClient || !session || !walletClient) {
+      throw new Error("Storage client or session not found");
+    }
+
+    const artistAccount = await fetchAccount(session, {
+      address: artistAccountAddress,
+    });
+
+    if (artistAccount.isErr()) {
+      throw new Error("Artist account not found");
+    }
+
+    console.log("Configuring sell token action");
     await configureAccountAction(session, {
       action: {
         unknown: {
-          address: evmAddress(SELL_TOKEN_ACTION_ADDRESS),
+          address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
           params: [],
         },
       },
@@ -117,6 +176,86 @@ export default function AdminPage() {
         return fetchAccount(session, { txHash });
       });
   };
+
+  // const addActionsToArtistAccount = async () => {
+  //   if (!storageClient || !session || !walletClient) {
+  //     throw new Error("Storage client or session not found");
+  //   }
+
+  //   const artistAccount = await fetchAccount(session, {
+  //     address: artistAccountAddress,
+  //   });
+
+  //   if (artistAccount.isErr()) {
+  //     throw new Error("Artist account not found");
+  //   }
+
+  //   console.log("Adding buy token action");
+  //   await addAccountManager(session, {
+  //     address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
+  //     permissions: {
+  //       canExecuteTransactions: true,
+  //       canTransferTokens: false,
+  //       canTransferNative: false,
+  //       canSetMetadataUri: false,
+  //     },
+  //   })
+  //     .andThen(handleOperationWith(walletClient))
+  //     .andThen(session.waitForTransaction)
+  //     .andThen((txHash) => {
+  //       console.log("ADD BUY TOKEN ACTION TX HASH:", txHash);
+  //       return fetchAccount(session, { txHash });
+  //     });
+
+  //   console.log("Adding sell token action");
+  //   await addAccountManager(session, {
+  //     address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
+  //     permissions: {
+  //       canExecuteTransactions: true,
+  //       canTransferTokens: false,
+  //       canTransferNative: false,
+  //       canSetMetadataUri: false,
+  //     },
+  //   })
+  //     .andThen(handleOperationWith(walletClient))
+  //     .andThen(session.waitForTransaction)
+  //     .andThen((txHash) => {
+  //       console.log("ADD SELL TOKEN ACTION TX HASH:", txHash);
+  //       return fetchAccount(session, { txHash });
+  //     });
+
+  //   console.log("Configuring buy token action");
+  //   await configureAccountAction(session, {
+  //     action: {
+  //       unknown: {
+  //         address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
+  //         params: [],
+  //       },
+  //     },
+  //   })
+  //     .andThen(handleOperationWith(walletClient))
+  //     .andThen(session.waitForTransaction)
+  //     .andThen((txHash) => {
+  //       console.log("CONFIGURE BUY TOKEN ACTION TX HASH:", txHash);
+  //       return fetchAccount(session, { txHash });
+  //     });
+
+  //   console.log("Configuring sell token action");
+  //   await configureAccountAction(session, {
+  //     action: {
+  //       unknown: {
+  //         address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
+  //         params: [],
+  //       },
+  //     },
+  //   })
+  //     .andThen(handleOperationWith(walletClient))
+  //     .andThen(session.waitForTransaction)
+  //     .andThen((txHash) => {
+  //       console.log("CONFIGURE SELL TOKEN ACTION TX HASH:", txHash);
+  //       return fetchAccount(session, { txHash });
+  //     });
+  // };
 
   const updateArtistMetadata = async () => {
     if (!storageClient || !session || !walletClient) {
@@ -145,7 +284,7 @@ export default function AdminPage() {
         {
           key: "token",
           type: MetadataAttributeType.STRING,
-          value: NEW_TOKEN_ADDRESS,
+          value: DAVINCI_TOKEN,
         },
       ],
     });
@@ -178,9 +317,14 @@ export default function AdminPage() {
       <h1>Single Artist Admin</h1>
       {session && (
         <div className="flex flex-col gap-4">
-          <Button onClick={addActionsToArtistAccount}>
-            Add Actions to Artist Account
+          <Button onClick={addBuyActionAsAccountManager}>
+            Add Buy Action to Artist Account
           </Button>
+          <Button onClick={addSellActionAsAccountManager}>
+            Add Sell Action to Artist Account
+          </Button>
+          <Button onClick={configureBuyAction}>Configure Buy Action</Button>
+          <Button onClick={configureSellAction}>Configure Sell Action</Button>
           <Button onClick={updateArtistMetadata}>
             Update artists metadata
           </Button>

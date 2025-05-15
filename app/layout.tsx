@@ -4,7 +4,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
 import { Toaster } from "@/components/ui/toaster";
-import { MockDataProvider } from "@/lib/mock-data-provider";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { Web3Provider } from "@/lib/web3-provider";
 import Link from "next/link";
@@ -12,10 +11,9 @@ import Link from "next/link";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ForeTalent – Trade the Future of Culture",
+  title: "Day One – Trade the Future of Culture",
   description:
     "Invest in the future success of artists by purchasing artist-specific tokens",
-  generator: "v0.dev",
   icons: {
     icon: "/favicon.ico",
   },

@@ -15,11 +15,12 @@ import { BLOCK_EXPLORER_URL, RPC_PROVIDER_URL } from "@/lib/constants";
 import { PublicClient, testnet } from "@lens-protocol/client";
 import { fragments } from "@/fragments";
 import WalletClientProvider from "./wallet-client-provider";
+import { Chain } from "viem";
 
 // connect kit doesn't export the config type, so we create it here
 type ConnectKitConfig = Parameters<typeof getDefaultConfig>[0];
 
-export const lensSepolia = {
+export const lensSepolia: Chain = {
   id: 37111,
   name: "Lens Network Sepolia Testnet",
   nativeCurrency: {
@@ -37,6 +38,12 @@ export const lensSepolia = {
       name: "LensExplorerScan",
       url: BLOCK_EXPLORER_URL,
       apiUrl: "",
+    },
+  },
+  contracts: {
+    multicall3: {
+      address: "0x8A44EDE8a6843a997bC0Cc4659e4dB1Da8f91116",
+      blockCreated: 22325,
     },
   },
 };

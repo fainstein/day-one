@@ -1,4 +1,4 @@
-import { Artist } from "@/lib/mock-data-provider";
+import { Artist } from "@/types/artist";
 import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 import { useSessionStore } from "@/stores/session-store";

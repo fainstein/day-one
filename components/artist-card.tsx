@@ -6,7 +6,6 @@ import Image from "next/image";
 import { ArrowUpRight, Banknote, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import type { Artist } from "@/lib/mock-data-provider";
 import { Address } from "viem";
 import useArtist from "@/hooks/useArtist";
 
@@ -15,16 +14,18 @@ type ArtistCardProps = {
 };
 
 export default function ArtistCard({ accountAddress }: ArtistCardProps) {
-  const artist = useArtist(accountAddress);
-  const [currentPrice, setCurrentPrice] = useState(artist.price);
+  const { artist, isLoading } = useArtist(accountAddress);
+  const [currentPrice, setCurrentPrice] = useState(0);
   const [priceChange, setPriceChange] = useState(0);
 
   // Update price when artist price changes
   useEffect(() => {
-    const oldPrice = currentPrice;
-    setCurrentPrice(artist.price);
-    setPriceChange(artist.price - oldPrice);
-  }, [currentPrice]);
+    if (!artist || !artist.price || !artist.change24h) return;
+    const currentPrice = artist.price;
+    const oldPrice = artist.change24h;
+    setCurrentPrice(currentPrice);
+    setPriceChange(currentPrice - oldPrice);
+  }, [artist]);
 
   // Format large numbers
   const formatNumber = (num: number) => {
@@ -32,6 +33,8 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
     if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
     return `$${num.toFixed(0)}`;
   };
+
+  if (isLoading || !artist) return <div>Loading...</div>;
 
   return (
     <Card className="overflow-hidden border-gray-200 dark:border-gray-800 bg-white dark:bg-gradient-to-b dark:from-gray-900 dark:to-black hover:shadow-lg dark:hover:shadow-purple-900/20 transition-all duration-300">
@@ -53,7 +56,7 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
           <h3 className="text-lg font-bold">{artist.name}</h3>
           <div className="flex flex-col items-end">
             <div className="text-lg font-mono font-bold">
-              ${artist.price.toFixed(4)}
+              ${artist.price?.toFixed(4)}
               {priceChange !== 0 && (
                 <span
                   className={`ml-1 text-xs ${
@@ -68,17 +71,17 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
             </div>
             <div
               className={`text-sm font-medium flex items-center ${
-                artist.change24h >= 0
+                artist.change24h && artist.change24h >= 0
                   ? "text-green-600 dark:text-green-400"
                   : "text-red-600 dark:text-red-400"
               }`}
             >
-              {artist.change24h >= 0 ? (
+              {artist.change24h && artist.change24h >= 0 ? (
                 <TrendingUp className="h-3 w-3 mr-1" />
               ) : (
                 <TrendingDown className="h-3 w-3 mr-1" />
               )}
-              {artist.change24h >= 0 ? "+" : ""}
+              {artist.change24h && artist.change24h >= 0 ? "+" : ""}
               {artist.change24h}%
             </div>
           </div>
@@ -87,7 +90,8 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
         <div className="flex items-center mt-3 text-gray-600 dark:text-gray-400">
           <Banknote className="h-4 w-4 mr-1" />
           <span className="text-sm">
-            Net Worth: {formatNumber(artist.totalInvested)}
+            Net Worth:{" "}
+            {artist.totalInvested && formatNumber(artist.totalInvested)}
           </span>
         </div>
       </CardContent>

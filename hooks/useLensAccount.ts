@@ -3,7 +3,6 @@ import { fetchAccount } from "@lens-protocol/client/actions";
 import { useEffect, useState } from "react";
 import { Address } from "viem";
 import { useSessionStore } from "@/stores/session-store";
-import { PublicClient } from "@lens-protocol/react";
 import { lensClient } from "@/lib/web3-provider";
 
 export default function useLensAccount(

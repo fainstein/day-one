@@ -19,24 +19,22 @@ import {
   executeAccountAction,
   fetchAccount,
 } from "@lens-protocol/client/actions";
-import { Address, parseUnits, toBytes } from "viem";
+import { Address, formatUnits, parseUnits, toBytes } from "viem";
 import { handleOperationWith } from "@lens-protocol/client/viem";
-import {
-  BUY_TOKEN_ACTION_ADDRESS,
-  SELL_TOKEN_ACTION_ADDRESS,
-} from "@/app/admin/[artistAccountAddress]/page";
 import useArtist from "@/hooks/useArtist";
+import {
+  BUY_ARTIST_TOKEN_ACTION,
+  SELL_ARTIST_TOKEN_ACTION,
+} from "@/lib/constants";
+import { useBalance } from "wagmi";
+import { lensSepolia } from "@/lib/web3-provider";
 
 type TradingFormProps = {
   artistAccountAddress: Address;
   tokenSymbol: string;
   price: number;
-  userTokenBalance: number;
+  userTokenBalance: bigint;
 };
-
-// TODO: Implement balance from Lens
-export const BALANCE_MOCK = 1000;
-const balance = BALANCE_MOCK;
 
 export default function TradingForm({
   artistAccountAddress,
@@ -47,15 +45,20 @@ export default function TradingForm({
   const [amount, setAmount] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  const { session, walletClient } = useSessionStore();
-  const { tokenAddress } = useArtist(artistAccountAddress);
+  const { session, walletClient, accountAddress } = useSessionStore();
+  const { artist } = useArtist(artistAccountAddress);
+  const { data: balance } = useBalance({
+    address: accountAddress || "0x",
+    chainId: lensSepolia.id,
+  });
 
   const handleBuy = async () => {
     if (
       !amount ||
       Number.parseFloat(amount) <= 0 ||
       !session ||
-      !walletClient
+      !walletClient ||
+      !artist
     ) {
       toast({
         title: "Invalid amount",
@@ -75,10 +78,10 @@ export default function TradingForm({
       account: evmAddress(artistAccountAddress),
       action: {
         unknown: {
-          address: evmAddress(BUY_TOKEN_ACTION_ADDRESS),
+          address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
           params: [
             {
-              data: blockchainData(tokenAddress),
+              data: blockchainData(artist.tokenAddress),
               key: blockchainData("lens.param.tokenAddress"),
             },
             {
@@ -101,7 +104,8 @@ export default function TradingForm({
       !amount ||
       Number.parseFloat(amount) <= 0 ||
       !session ||
-      !walletClient
+      !walletClient ||
+      !artist
     ) {
       toast({
         title: "Invalid amount",
@@ -121,10 +125,10 @@ export default function TradingForm({
       account: evmAddress(artistAccountAddress),
       action: {
         unknown: {
-          address: evmAddress(SELL_TOKEN_ACTION_ADDRESS),
+          address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
           params: [
             {
-              data: blockchainData(tokenAddress),
+              data: blockchainData(artist.tokenAddress),
               key: blockchainData("lens.param.tokenAddress"),
             },
             {
@@ -143,7 +147,8 @@ export default function TradingForm({
       });
   };
 
-  const tokenAmount = amount ? Number.parseFloat(amount) / price : 0;
+  const tokenAmount =
+    amount && price !== 0 ? Number.parseFloat(amount) / price : 0;
 
   return (
     <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50">
@@ -178,9 +183,12 @@ export default function TradingForm({
                 </span>
               </div>
 
-              <div className="text-xs text-gray-500 dark:text-gray-500">
-                Wallet Balance: {balance.toFixed(2)} $GHO
-              </div>
+              {balance && (
+                <div className="text-xs text-gray-500 dark:text-gray-500">
+                  Wallet Balance: {formatUnits(balance.value, balance.decimals)}{" "}
+                  ${balance.symbol}
+                </div>
+              )}
             </div>
 
             <Button
@@ -215,7 +223,9 @@ export default function TradingForm({
               </div>
 
               <div className="text-xs text-gray-500 dark:text-gray-500">
-                Token Balance: {userTokenBalance.toFixed(4)} ${tokenSymbol}
+                Token Balance:{" "}
+                {Number(formatUnits(userTokenBalance, 18)).toFixed(4)} $
+                {tokenSymbol}
               </div>
             </div>
 

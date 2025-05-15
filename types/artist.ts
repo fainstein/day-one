@@ -4,14 +4,14 @@ export type Artist = {
   id: string;
   name: string;
   tokenSymbol: string;
-  image: string;
-  price: number;
-  change24h: number;
-  totalInvested: number;
-  accountAddress: Address;
-  priceHistory: { timestamp: number; price: number }[];
   tokenAddress: Address;
-  metrics: {
+  accountAddress: Address;
+  image: string;
+  price?: number;
+  change24h?: number;
+  totalInvested?: number;
+  priceHistory?: { timestamp: number; price: number }[];
+  metrics?: {
     [key: string]: {
       name: string;
       value: number;

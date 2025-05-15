@@ -16,7 +16,7 @@ import TradingForm from "@/components/trading-form";
 import PriceLogic from "@/components/price-logic";
 import PriceChart from "@/components/price-chart";
 import { useParams } from "next/navigation";
-import { useAccount } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Role } from "@lens-protocol/react";
 import { useSessionStore } from "@/stores/session-store";
@@ -25,7 +25,7 @@ import ArtistDetailControls from "@/components/artist-detail-controls";
 import useLensAccounts, { LensAccount } from "@/hooks/useLensAccounts";
 import { formatAddress } from "@/lib/utils";
 import useArtist from "@/hooks/useArtist";
-import { Address } from "viem";
+import { Address, erc20Abi, formatUnits } from "viem";
 
 export default function ArtistPage() {
   const params = useParams<{ accountAddress: string }>();
@@ -37,7 +37,13 @@ export default function ArtistPage() {
   const { session } = useSessionStore();
   const isAuthenticated = !!session;
 
-  const artist = useArtist(params.accountAddress as Address);
+  const { artist } = useArtist(params.accountAddress as Address);
+  const { data: balance } = useReadContract({
+    address: artist?.tokenAddress as Address,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [address || "0x"],
+  });
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -70,7 +76,7 @@ export default function ArtistPage() {
     );
   }
 
-  const userTokenBalance = 0;
+  const userTokenBalance = balance || BigInt(0);
 
   return (
     <div className="space-y-8">
@@ -110,22 +116,22 @@ export default function ArtistPage() {
                     Current Price
                   </p>
                   <p className="text-3xl font-bold font-mono">
-                    ${artist.price.toFixed(4)}
+                    ${artist.price?.toFixed(4)}
                   </p>
                 </div>
                 <div
                   className={`flex items-center text-lg font-medium ${
-                    artist.change24h >= 0
+                    artist.change24h && artist.change24h >= 0
                       ? "text-green-600 dark:text-green-400"
                       : "text-red-600 dark:text-red-400"
                   }`}
                 >
-                  {artist.change24h >= 0 ? (
+                  {artist.change24h && artist.change24h >= 0 ? (
                     <TrendingUp className="h-5 w-5 mr-1" />
                   ) : (
                     <TrendingDown className="h-5 w-5 mr-1" />
                   )}
-                  {artist.change24h >= 0 ? "+" : ""}
+                  {artist.change24h && artist.change24h >= 0 ? "+" : ""}
                   {artist.change24h}% (24h)
                 </div>
               </div>
@@ -150,7 +156,7 @@ export default function ArtistPage() {
                 </h2>
                 <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50 h-80">
                   <CardContent className="p-4 h-full">
-                    <PriceChart priceHistory={artist.priceHistory} />
+                    <PriceChart priceHistory={artist.priceHistory ?? []} />
                   </CardContent>
                 </Card>
               </div>
@@ -158,16 +164,17 @@ export default function ArtistPage() {
               <div>
                 <h2 className="text-xl font-bold mb-4">Live Metrics</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(artist.metrics).map(([key, metric]) => (
-                    <MetricCard
-                      key={key}
-                      name={metric.name}
-                      value={metric.value}
-                      history={metric.history}
-                      unit={metric.unit}
-                      icon={metric.icon}
-                    />
-                  ))}
+                  {artist.metrics &&
+                    Object.entries(artist.metrics).map(([key, metric]) => (
+                      <MetricCard
+                        key={key}
+                        name={metric.name}
+                        value={metric.value}
+                        history={metric.history}
+                        unit={metric.unit}
+                        icon={metric.icon}
+                      />
+                    ))}
                 </div>
               </div>
 
@@ -180,7 +187,7 @@ export default function ArtistPage() {
                   <TradingForm
                     artistAccountAddress={artist.accountAddress}
                     tokenSymbol={artist.tokenSymbol}
-                    price={artist.price}
+                    price={artist.price ?? 0}
                     userTokenBalance={userTokenBalance}
                   />
 
@@ -195,12 +202,15 @@ export default function ArtistPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-lg">${artist.tokenSymbol}</span>
                         <span className="text-lg font-mono">
-                          {userTokenBalance.toFixed(4)}
+                          {Number(formatUnits(userTokenBalance, 18)).toFixed(4)}
                         </span>
                       </div>
                       <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Value: ${(userTokenBalance * artist.price).toFixed(2)}
-                        {" $GHO"}
+                        Value: $
+                        {(
+                          Number(formatUnits(userTokenBalance, 18)) *
+                          (artist.price ?? 0)
+                        ).toFixed(2)}
                       </div>
                     </CardContent>
                   </Card>
