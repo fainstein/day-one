@@ -5,15 +5,12 @@ import { useSessionStore } from "@/stores/session-store";
 import { follow, unfollow, fetchAccount } from "@lens-protocol/client/actions";
 import { evmAddress } from "@lens-protocol/client";
 import { handleOperationWith } from "@lens-protocol/client/viem";
-import { useWalletClient } from "wagmi";
 import useLensAccount from "@/hooks/useLensAccount";
-import { never } from "@lens-protocol/react";
 
 export default function ArtistDetailControls({ artist }: { artist: Artist }) {
   const { account } = useLensAccount(artist.accountAddress);
-  const { session } = useSessionStore();
+  const { session, walletClient } = useSessionStore();
   const [isFollowing, setIsFollowing] = useState(false);
-  const { data: walletClient } = useWalletClient();
 
   useEffect(() => {
     if (account) {

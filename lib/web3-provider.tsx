@@ -12,38 +12,48 @@ import {
 } from "@lens-protocol/react-web";
 import { bindings } from "@lens-protocol/wagmi";
 import { BLOCK_EXPLORER_URL, RPC_PROVIDER_URL } from "@/lib/constants";
-import { PublicClient, testnet } from "@lens-protocol/client";
+import { PublicClient, testnet, mainnet } from "@lens-protocol/client";
 import { fragments } from "@/fragments";
 import WalletClientProvider from "./wallet-client-provider";
 import { Chain } from "viem";
+import { lens } from "viem/chains";
 
 // connect kit doesn't export the config type, so we create it here
 type ConnectKitConfig = Parameters<typeof getDefaultConfig>[0];
 
-export const lensSepolia: Chain = {
-  id: 37111,
-  name: "Lens Network Sepolia Testnet",
-  nativeCurrency: {
-    name: "GRASS",
-    symbol: "GRASS",
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: [RPC_PROVIDER_URL],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "LensExplorerScan",
-      url: BLOCK_EXPLORER_URL,
-      apiUrl: "",
-    },
-  },
+// export const lensMainnet: Chain = {
+//   id: 37111,
+//   name: "Lens Network Sepolia Testnet",
+//   nativeCurrency: {
+//     name: "GRASS",
+//     symbol: "GRASS",
+//     decimals: 18,
+//   },
+//   rpcUrls: {
+//     default: {
+//       http: [RPC_PROVIDER_URL],
+//     },
+//   },
+//   blockExplorers: {
+//     default: {
+//       name: "LensExplorerScan",
+//       url: BLOCK_EXPLORER_URL,
+//       apiUrl: "",
+//     },
+//   },
+//   contracts: {
+//     multicall3: {
+//       address: "0x8A44EDE8a6843a997bC0Cc4659e4dB1Da8f91116",
+//       blockCreated: 22325,
+//     },
+//   },
+// };
+
+export const lensMainnet: Chain = {
+  ...lens,
   contracts: {
     multicall3: {
-      address: "0x8A44EDE8a6843a997bC0Cc4659e4dB1Da8f91116",
-      blockCreated: 22325,
+      address: "0x6b6dEa4D80e3077D076733A04c48F63c3BA49320",
     },
   },
 };
@@ -52,9 +62,9 @@ export const lensSepolia: Chain = {
 const appConfigs = {
   development: {
     connectkit: {
-      chains: [lensSepolia],
+      chains: [lensMainnet],
       transports: {
-        [lensSepolia.id]: http(),
+        [lensMainnet.id]: http(),
       },
     } as Partial<ConnectKitConfig>,
     lens: {
@@ -64,9 +74,9 @@ const appConfigs = {
   },
   production: {
     connectkit: {
-      chains: [lensSepolia],
+      chains: [lensMainnet],
       transports: {
-        [lensSepolia.id]: http(),
+        [lensMainnet.id]: http(),
       },
     } as Partial<ConnectKitConfig>,
     lens: {
@@ -76,7 +86,7 @@ const appConfigs = {
 };
 
 // select the config based on the environment
-const appConfig = appConfigs["development"]; // or appConfigs["production"]
+const appConfig = appConfigs["production"]; // or appConfigs["production"]
 
 const wagmiConfig = createConfig(
   getDefaultConfig({
@@ -121,6 +131,6 @@ export function Web3Provider({ children }: { children: React.ReactNode }) {
 }
 
 export const lensClient = PublicClient.create({
-  environment: testnet,
+  environment: mainnet,
   // fragments,
 });

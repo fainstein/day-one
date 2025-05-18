@@ -13,21 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useSessionStore } from "@/stores/session-store";
-import useLensAccount from "@/hooks/useLensAccount";
-import { blockchainData, evmAddress } from "@lens-protocol/client";
-import {
-  executeAccountAction,
-  fetchAccount,
-} from "@lens-protocol/client/actions";
-import { Address, formatUnits, parseUnits, toBytes } from "viem";
-import { handleOperationWith } from "@lens-protocol/client/viem";
+import { evmAddress } from "@lens-protocol/client";
+import { Address, encodeFunctionData, formatUnits, parseUnits } from "viem";
 import useArtist from "@/hooks/useArtist";
-import {
-  BUY_ARTIST_TOKEN_ACTION,
-  SELL_ARTIST_TOKEN_ACTION,
-} from "@/lib/constants";
-import { useBalance } from "wagmi";
-import { lensSepolia } from "@/lib/web3-provider";
+import { PRICE_ENGINE_ADDRESS } from "@/lib/constants";
+import { useBalance, usePublicClient, useReadContract } from "wagmi";
+import { lensMainnet } from "@/lib/web3-provider";
+import { lensAccountAbi } from "@/lib/lens-account-abi";
+import { artistTokenAbi } from "@/lib/artist-token-abi";
+import { priceEngineAbi } from "@/lib/price-engine-abi";
 
 type TradingFormProps = {
   artistAccountAddress: Address;
@@ -48,9 +42,26 @@ export default function TradingForm({
   const { session, walletClient, accountAddress } = useSessionStore();
   const { artist } = useArtist(artistAccountAddress);
   const { data: balance } = useBalance({
-    address: accountAddress || "0x",
-    chainId: lensSepolia.id,
+    address: walletClient?.account?.address || "0x",
+    chainId: lensMainnet.id,
   });
+  const publicClient = usePublicClient({
+    chainId: lensMainnet.id,
+  });
+
+  const { data: priceEngineBalance } = useBalance({
+    address: PRICE_ENGINE_ADDRESS,
+    chainId: lensMainnet.id,
+  });
+
+  console.log("priceEngineBalance", priceEngineBalance);
+
+  const { data: tokenBalance } = useBalance({
+    address: artist?.tokenAddress,
+    chainId: lensMainnet.id,
+  });
+
+  console.log("tokenBalance", tokenBalance);
 
   const handleBuy = async () => {
     if (
@@ -58,7 +69,8 @@ export default function TradingForm({
       Number.parseFloat(amount) <= 0 ||
       !session ||
       !walletClient ||
-      !artist
+      !artist ||
+      !walletClient?.account?.address
     ) {
       toast({
         title: "Invalid amount",
@@ -71,41 +83,75 @@ export default function TradingForm({
     const amountValue = Number.parseFloat(amount);
 
     const parsedAmount = parseUnits(amountValue.toFixed(18), 18);
+    console.log("parsedAmount", parsedAmount);
+    const requiredValue = parsedAmount;
+    console.log("requiredValue", requiredValue);
+    // const requiredValue = BigInt(artist.price || 0) * parsedAmount;
 
     setIsProcessing(true);
 
-    await executeAccountAction(session, {
-      account: evmAddress(artistAccountAddress),
-      action: {
-        unknown: {
-          address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
-          params: [
-            {
-              data: blockchainData(artist.tokenAddress),
-              key: blockchainData("lens.param.tokenAddress"),
-            },
-            {
-              data: blockchainData(parsedAmount.toString()),
-              key: blockchainData("lens.param.amount"),
-            },
-          ],
-        },
-      },
-    })
-      .andThen(handleOperationWith(walletClient))
-      .andThen(session.waitForTransaction)
-      .andThen((txHash) => {
-        console.log("TX HASH:", txHash);
-        return fetchAccount(session, { txHash });
+    try {
+      const txHash = await walletClient.writeContract({
+        address: accountAddress || "0x",
+        abi: lensAccountAbi,
+        functionName: "executeTransaction",
+        chain: lensMainnet,
+        account: walletClient?.account?.address,
+        value: requiredValue,
+        args: [
+          evmAddress(artist.tokenAddress),
+          requiredValue,
+          encodeFunctionData({
+            abi: artistTokenAbi,
+            functionName: "mint",
+            args: [accountAddress || "0x", parsedAmount],
+          }),
+        ],
       });
+
+      const receipt = await publicClient?.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      console.log("RECEIPT:", receipt);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+    setIsProcessing(false);
+    // await executeAccountAction(session, {
+    //   account: evmAddress(artistAccountAddress),
+    //   action: {
+    //     unknown: {
+    //       address: evmAddress(BUY_ARTIST_TOKEN_ACTION),
+    //       params: [
+    //         {
+    //           data: blockchainData(artist.tokenAddress),
+    //           key: blockchainData("lens.param.tokenAddress"),
+    //         },
+    //         {
+    //           data: blockchainData(parsedAmount.toString()),
+    //           key: blockchainData("lens.param.amount"),
+    //         },
+    //       ],
+    //     },
+    //   },
+    // })
+    //   .andThen(handleOperationWith(walletClient))
+    //   .andThen(session.waitForTransaction)
+    //   .andThen((txHash) => {
+    //     console.log("TX HASH:", txHash);
+    //     return fetchAccount(session, { txHash });
+    //   });
   };
+
   const handleSell = async () => {
     if (
       !amount ||
       Number.parseFloat(amount) <= 0 ||
       !session ||
       !walletClient ||
-      !artist
+      !artist ||
+      !walletClient?.account?.address
     ) {
       toast({
         title: "Invalid amount",
@@ -118,37 +164,159 @@ export default function TradingForm({
     const amountValue = Number.parseFloat(amount);
 
     const parsedAmount = parseUnits(amountValue.toFixed(18), 18);
+    console.log("parsedAmount", parsedAmount);
+    const requiredValue = parsedAmount;
+    console.log("requiredValue", requiredValue);
+    // const requiredValue = BigInt(artist.price || 0) * parsedAmount;
 
     setIsProcessing(true);
 
-    await executeAccountAction(session, {
-      account: evmAddress(artistAccountAddress),
-      action: {
-        unknown: {
-          address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
-          params: [
-            {
-              data: blockchainData(artist.tokenAddress),
-              key: blockchainData("lens.param.tokenAddress"),
-            },
-            {
-              data: blockchainData(parsedAmount.toString()),
-              key: blockchainData("lens.param.amount"),
-            },
-          ],
-        },
-      },
-    })
-      .andThen(handleOperationWith(walletClient))
-      .andThen(session.waitForTransaction)
-      .andThen((txHash) => {
-        console.log("TX HASH:", txHash);
-        return fetchAccount(session, { txHash });
+    // const mintData = encodeFunctionData({
+    //   abi: artistTokenAbi,
+    //   functionName: "mint",
+    //   args: [
+    //     artist.accountAddress, // recipient
+    //     parsedAmount,
+    //   ],
+    // });
+
+    // const executeCalldata = encodeFunctionData({
+    //   abi: lensAccountAbi,
+    //   functionName: "executeTransaction",
+    //   args: [
+    //     artist.tokenAddress, // <-- the ERC20 contract
+    //     0n, // no ETH out
+    //     mintData,
+    //   ],
+    // });
+
+    try {
+      const txHash = await walletClient.writeContract({
+        address: accountAddress || "0x",
+        abi: lensAccountAbi,
+        functionName: "executeTransaction",
+        chain: lensMainnet,
+        account: walletClient?.account?.address,
+        value: BigInt(0),
+        args: [
+          evmAddress(artist.tokenAddress),
+          BigInt(0),
+          encodeFunctionData({
+            abi: artistTokenAbi,
+            functionName: "burn",
+            args: [accountAddress || "0x", parsedAmount],
+          }),
+        ],
       });
+
+      const receipt = await publicClient?.waitForTransactionReceipt({
+        hash: txHash,
+      });
+
+      console.log("RECEIPT:", receipt);
+      setIsProcessing(false);
+    } catch (error) {
+      console.error("Error:", error);
+      setIsProcessing(false);
+    }
+
+    // await executeAccountAction(session, {
+    //   account: evmAddress(artistAccountAddress),
+    //   action: {
+    //     unknown: {
+    //       address: evmAddress(SELL_ARTIST_TOKEN_ACTION),
+    //       params: [
+    //         {
+    //           data: blockchainData(artist.tokenAddress),
+    //           key: blockchainData("lens.param.tokenAddress"),
+    //         },
+    //         {
+    //           data: blockchainData(parsedAmount.toString()),
+    //           key: blockchainData("lens.param.amount"),
+    //         },
+    //       ],
+    //     },
+    //   },
+    // })
+    //   .andThen(handleOperationWith(walletClient))
+    //   .andThen(session.waitForTransaction)
+    //   .andThen((txHash) => {
+    //     console.log("TX HASH:", txHash);
+    //     return fetchAccount(session, { txHash });
+    //   });
   };
 
   const tokenAmount =
     amount && price !== 0 ? Number.parseFloat(amount) / price : 0;
+
+  const handleBuyWithEOA = async () => {
+    if (
+      !amount ||
+      Number.parseFloat(amount) <= 0 ||
+      !walletClient ||
+      !artist ||
+      !walletClient?.account?.address
+    ) {
+      return;
+    }
+
+    const amountValue = Number.parseFloat(amount);
+
+    const parsedAmount = parseUnits(amountValue.toFixed(18), 18);
+    console.log("parsedAmount", parsedAmount);
+
+    const txHash = await walletClient.writeContract({
+      address: artist?.tokenAddress,
+      abi: artistTokenAbi,
+      functionName: "mint",
+      chain: lensMainnet,
+      account: walletClient?.account?.address,
+      value: parsedAmount,
+      args: [walletClient?.account?.address, parsedAmount],
+    });
+
+    const receipt = await publicClient?.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    console.log("RECEIPT:", receipt);
+  };
+
+  const handleSellWithEOA = async () => {
+    if (
+      !amount ||
+      Number.parseFloat(amount) <= 0 ||
+      !walletClient ||
+      !artist ||
+      !walletClient?.account?.address
+    ) {
+      return;
+    }
+
+    const amountValue = Number.parseFloat(amount);
+
+    const parsedAmount = parseUnits(amountValue.toFixed(18), 18);
+    console.log("parsedAmount", parsedAmount);
+
+    const txHash = await walletClient.writeContract({
+      address: artist?.tokenAddress,
+      abi: artistTokenAbi,
+      functionName: "burn",
+      chain: lensMainnet,
+      account: walletClient?.account?.address,
+      args: [walletClient?.account?.address, parsedAmount],
+    });
+
+    const receipt = await publicClient?.waitForTransactionReceipt({
+      hash: txHash,
+    });
+
+    console.log("RECEIPT:", receipt);
+  };
+
+  const equivalentGHO = artist?.price
+    ? artist?.price * Number.parseFloat(amount)
+    : 0;
 
   return (
     <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50">
@@ -166,7 +334,7 @@ export default function TradingForm({
           <TabsContent value="buy" className="space-y-4 pt-4">
             <div className="space-y-2">
               <label className="text-sm text-gray-600 dark:text-gray-400">
-                Amount ($GHO)
+                Amount (${tokenSymbol})
               </label>
               <Input
                 type="number"
@@ -177,9 +345,9 @@ export default function TradingForm({
               />
 
               <div className="text-sm text-gray-600 dark:text-gray-400 flex justify-between">
-                <span>You will receive:</span>
+                <span>You will spend:</span>
                 <span className="font-mono">
-                  {tokenAmount.toFixed(4)} ${tokenSymbol}
+                  {equivalentGHO.toFixed(2)} $GHO
                 </span>
               </div>
 
@@ -205,7 +373,7 @@ export default function TradingForm({
           <TabsContent value="sell" className="space-y-4 pt-4">
             <div className="space-y-2">
               <label className="text-sm text-gray-600 dark:text-gray-400">
-                Amount ($GHO)
+                Amount (${tokenSymbol})
               </label>
               <Input
                 type="number"
@@ -216,15 +384,15 @@ export default function TradingForm({
               />
 
               <div className="text-sm text-gray-600 dark:text-gray-400 flex justify-between">
-                <span>You will sell:</span>
+                <span>You will receive:</span>
                 <span className="font-mono">
-                  {tokenAmount.toFixed(4)} ${tokenSymbol}
+                  {equivalentGHO.toFixed(2)} $GHO
                 </span>
               </div>
 
               <div className="text-xs text-gray-500 dark:text-gray-500">
                 Token Balance:{" "}
-                {Number(formatUnits(userTokenBalance, 18)).toFixed(4)} $
+                {Number(formatUnits(userTokenBalance, 18)).toFixed(2)} $
                 {tokenSymbol}
               </div>
             </div>
@@ -234,8 +402,7 @@ export default function TradingForm({
               disabled={
                 isProcessing ||
                 !amount ||
-                Number.parseFloat(amount) <= 0 ||
-                tokenAmount > userTokenBalance
+                Number.parseFloat(amount) <= 0 
               }
               className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700"
             >

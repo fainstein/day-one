@@ -4,7 +4,7 @@ import { MetadataAttributeType, account } from "@lens-protocol/metadata";
 import { useStorageClientStore } from "@/stores/storage-client-store";
 import { authenticate, useSessionStore } from "@/stores/session-store";
 import { immutable } from "@lens-chain/storage-client";
-import { lensSepolia } from "@/lib/web3-provider";
+import { lensMainnet } from "@/lib/web3-provider";
 import useLensAccounts from "@/hooks/useLensAccounts";
 import { Role } from "@lens-protocol/react";
 import { formatAddress } from "@/lib/utils";
@@ -15,13 +15,14 @@ import {
   fetchAccount,
 } from "@lens-protocol/client/actions";
 import { handleOperationWith } from "@lens-protocol/client/viem";
+import CreateAccountModal from "@/components/create-account-modal";
 
 const ARTIST_DATA = {
-  name: "Da Vinci",
-  username: "davinci",
-  bio: "Renaissance polymath and artistic genius known for masterpieces like the Mona Lisa and revolutionary contributions to art, science, and engineering.",
-  picture: "/Da Vinci.jpg",
-  PICTURE_FILE_NAME: "Da Vinci.jpg",
+  name: "Doechii (Day One)",
+  username: "dayone-v3-doechii",
+  bio: "Doechii is a genre-defying force in hip-hop, blending razor-sharp lyricism with boundless creativity and unapologetic authenticity.",
+  picture: "/Doechii.jpg",
+  PICTURE_FILE_NAME: "Doechii.jpg",
   TOKEN_ADDRESS: "0x0000000000000000000000000000000000000000",
 };
 
@@ -31,6 +32,8 @@ export default function AdminPage() {
   const { session, walletClient } = useSessionStore();
   const { accounts } = useLensAccounts(address);
   const [imageData, setImageData] = useState<File | null>(null);
+  const [isCreateAccountModalOpen, setIsCreateAccountModalOpen] =
+    useState(false);
 
   useEffect(() => {
     const loadImage = async () => {
@@ -60,7 +63,7 @@ export default function AdminPage() {
     }
 
     // First upload the image to IPFS
-    const acl = immutable(lensSepolia.id);
+    const acl = immutable(lensMainnet.id);
 
     const { uri: imageUri } = await storageClient.uploadFile(imageData, {
       acl,
@@ -107,6 +110,10 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col gap-4">
       <h1>Admin</h1>
+      <CreateAccountModal
+        isOpen={isCreateAccountModalOpen}
+        onClose={() => setIsCreateAccountModalOpen(false)}
+      />
       {session && (
         <div className="flex flex-col gap-4">
           <Button onClick={createArtist}>Create Artist</Button>
@@ -114,27 +121,42 @@ export default function AdminPage() {
       )}
       {!session && (
         <div className="flex flex-col gap-4">
-          {accounts.map((account) => (
-            <div
-              key={account.account.address}
-              className="flex items-center gap-2"
-            >
-              <p>{formatAddress(account.account.address)}</p>
-              <p>{formatAddress(account.account.owner)}</p>
-              <p>{account.account.username?.localName}</p>
+          {accounts.length > 0 &&
+            accounts.map((account) => (
+              <div
+                key={account.account.address}
+                className="flex items-center gap-2"
+              >
+                <p>{formatAddress(account.account.address)}</p>
+                <p>{formatAddress(account.account.owner)}</p>
+                <p>{account.account.username?.localName}</p>
+                <Button
+                  onClick={() =>
+                    authenticate(
+                      account.account.owner,
+                      account.account.address,
+                      Role.AccountOwner
+                    )
+                  }
+                >
+                  Authenticate
+                </Button>
+              </div>
+            ))}
+          {accounts.length === 0 && (
+            <div className="flex flex-col gap-4">
+              <p>No accounts found. Please create an account first.</p>
               <Button
-                onClick={() =>
-                  authenticate(
-                    account.account.owner,
-                    account.account.address,
-                    Role.AccountOwner
-                  )
-                }
+                onClick={() => {
+                  if (!address) return;
+                  authenticate(address, address, Role.OnboardingUser);
+                  setIsCreateAccountModalOpen(true);
+                }}
               >
                 Authenticate
               </Button>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

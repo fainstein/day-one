@@ -32,7 +32,7 @@ export default function ArtistPage() {
 
   const { address } = useAccount();
   const { accounts } = useLensAccounts(address);
-  const { authenticate } = useSessionStore();
+  const { authenticate, accountAddress } = useSessionStore();
 
   const { session } = useSessionStore();
   const isAuthenticated = !!session;
@@ -42,8 +42,11 @@ export default function ArtistPage() {
     address: artist?.tokenAddress as Address,
     abi: erc20Abi,
     functionName: "balanceOf",
-    args: [address || "0x"],
+    args: [accountAddress || "0x"],
   });
+
+  console.log("Smart Account Address:", accountAddress);
+  console.log("Smart Account Artist Token Balance:", balance);
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -116,7 +119,7 @@ export default function ArtistPage() {
                     Current Price
                   </p>
                   <p className="text-3xl font-bold font-mono">
-                    ${artist.price?.toFixed(4)}
+                    ${artist.price}
                   </p>
                 </div>
                 <div

@@ -10,7 +10,7 @@ import { handleOperationWith } from "@lens-protocol/client/viem";
 import { fetchAccount } from "@lens-protocol/client/actions";
 import { never } from "@lens-protocol/client";
 import { immutable } from "@lens-chain/storage-client";
-import { lensSepolia } from "@/lib/web3-provider";
+import { lensMainnet } from "@/lib/web3-provider";
 
 interface CreateAccountModalProps {
   isOpen: boolean;
@@ -37,7 +37,7 @@ const CreateAccountModal = ({ isOpen, onClose }: CreateAccountModalProps) => {
       name: inputValue,
     });
 
-    const acl = immutable(lensSepolia.id);
+    const acl = immutable(lensMainnet.id);
 
     const { uri } = await storageClient.uploadAsJson(metadata, {
       acl,

@@ -1,11 +1,15 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { ARTISTS_ACCOUNTS, PRICE_ENGINE_ADDRESS } from "@/lib/constants";
-import { lensSepolia } from "@/lib/web3-provider";
+import {
+  ARTISTS_ACCOUNTS,
+  PRICE_ENGINE_ADDRESS,
+  TokenFactoryAddress,
+} from "@/lib/constants";
+import { lensMainnet } from "@/lib/web3-provider";
+import { getContract, maxUint256 } from "viem";
 import { usePublicClient, useWalletClient } from "wagmi";
 
-const TokenFactoryAddress = "0xC2211c8A2ca301EE7ed5e11873A6A88ff7848066";
 const TokenFactoryAbi = [
   {
     name: "createArtistToken",
@@ -40,27 +44,47 @@ const TokenFactoryAbi = [
 
 export default function TokenDeployerPage() {
   const walletClient = useWalletClient({
-    chainId: lensSepolia.id,
+    chainId: lensMainnet.id,
   });
   const publicClient = usePublicClient({
-    chainId: lensSepolia.id,
+    chainId: lensMainnet.id,
   });
 
   const handleDeployToken = async () => {
-    if (!walletClient || !publicClient) return;
+    if (!walletClient || !publicClient || !walletClient.data?.account) return;
 
-    const txHash = await walletClient.data?.writeContract({
+    const contract = getContract({
       address: TokenFactoryAddress,
       abi: TokenFactoryAbi,
-      functionName: "createArtistToken",
-      args: [
-        "Da Vinci One Day",
-        "DAVINCI",
-        BigInt(100000),
-        PRICE_ENGINE_ADDRESS,
-        ARTISTS_ACCOUNTS.DAVINCI,
-      ],
+      client: walletClient.data,
     });
+
+    const txHash = await contract.write.createArtistToken(
+      [
+        "Doechii One Day",
+        "DOECHII",
+        maxUint256,
+        PRICE_ENGINE_ADDRESS,
+        ARTISTS_ACCOUNTS.DOECHII,
+      ],
+      {
+        account: walletClient.data?.account,
+        chain: lensMainnet,
+      }
+    );
+
+    // const txHash = await walletClient.data?.writeContract({
+    //   address: TokenFactoryAddress,
+    //   abi: TokenFactoryAbi,
+    //   functionName: "createArtistToken",
+    //   args: [
+    //     "Da Vinci One Day",
+    //     "DAVINCI",
+    //     BigInt(100000),
+    //     PRICE_ENGINE_ADDRESS,
+    //     ARTISTS_ACCOUNTS.DAVINCI,
+    //   ],
+    // });
 
     if (!txHash) {
       toast({

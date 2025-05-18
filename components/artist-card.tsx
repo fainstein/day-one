@@ -31,7 +31,7 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
-    return `$${num.toFixed(0)}`;
+    return `$${num.toFixed(2)}`;
   };
 
   if (isLoading || !artist) return <div>Loading...</div>;
@@ -56,7 +56,7 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
           <h3 className="text-lg font-bold">{artist.name}</h3>
           <div className="flex flex-col items-end">
             <div className="text-lg font-mono font-bold">
-              ${artist.price?.toFixed(4)}
+              ${artist.price}
               {priceChange !== 0 && (
                 <span
                   className={`ml-1 text-xs ${

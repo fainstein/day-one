@@ -56,7 +56,7 @@ export default function PriceChart({ priceHistory }: PriceChartProps) {
     for (let i = 0; i < 6; i++) {
       const y = canvas.height - i * gridSpacing;
       const price = minPrice + (i / 5) * priceRange;
-      ctx.fillText(`$${price.toFixed(4)}`, 10, y - 5);
+      ctx.fillText(`$${price.toFixed(2)}`, 10, y - 5);
     }
 
     // Draw date labels

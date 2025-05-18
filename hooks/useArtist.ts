@@ -3,7 +3,7 @@ import useLensAccount from "./useLensAccount";
 import { Address, erc20Abi, formatUnits, parseUnits } from "viem";
 import { useEffect, useState } from "react";
 import { usePublicClient } from "wagmi";
-import { lensSepolia } from "@/lib/web3-provider";
+import { lensMainnet } from "@/lib/web3-provider";
 import { priceEngineAbi } from "@/lib/price-engine-abi";
 import { PRICE_ENGINE_ADDRESS } from "@/lib/constants";
 
@@ -14,7 +14,7 @@ export default function useArtist(accountAddress: Address): {
   const { account } = useLensAccount(accountAddress, true);
   const [isLoading, setIsLoading] = useState(true);
   const publicClient = usePublicClient({
-    chainId: lensSepolia.id,
+    chainId: lensMainnet.id,
   });
   const [extraData, setExtraData] = useState<{
     price: number;
@@ -75,14 +75,19 @@ export default function useArtist(accountAddress: Address): {
       )
         return;
 
-      const totalInvested =
-        BigInt(totalSupply) * parseUnits(Number(price).toFixed(18), 18);
+      const totalInvested = totalSupply * price;
 
-      const totalInvestedInUnits = formatUnits(totalInvested, 18);
+      const totalInvestedInUnits =
+        Number(formatUnits(totalSupply, 18)) * Number(formatUnits(price, 18));
 
       setExtraData({
-        price: Number(price),
-        change24h: Number(price) * (1 + (Math.random() * 0.1 - 0.05)), // Randomize +/- 5% of current price
+        price: Number(formatUnits(price, 18)),
+        change24h: Number(
+          (
+            Number(formatUnits(price, 18)) *
+            (1 + (Math.random() * 0.1 - 0.05))
+          ).toFixed(2)
+        ), // Randomize +/- 5% of current price
         totalInvested: Number(totalInvestedInUnits),
         tokenAddress,
         tokenSymbol: tokenSymbol as string,

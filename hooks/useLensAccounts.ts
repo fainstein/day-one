@@ -4,7 +4,7 @@ import {
   fetchAccountsAvailable,
 } from "@lens-protocol/client/actions";
 import { useEffect, useState } from "react";
-import { lensClient, lensSepolia } from "@/lib/web3-provider";
+import { lensClient, lensMainnet } from "@/lib/web3-provider";
 import { Address } from "viem";
 import { usePublicClient } from "wagmi";
 import { Role } from "@lens-protocol/react";
@@ -19,7 +19,7 @@ export default function useLensAccounts(accountAddress?: Address): {
 } {
   const [accounts, setAccounts] = useState<LensAccount[]>([]);
   const publicClient = usePublicClient({
-    chainId: lensSepolia.id,
+    chainId: lensMainnet.id,
   });
 
   useEffect(() => {
