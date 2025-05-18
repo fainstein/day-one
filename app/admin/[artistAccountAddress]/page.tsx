@@ -6,13 +6,14 @@ import {
 } from "@/stores/storage-client-store";
 import { authenticate, useSessionStore } from "@/stores/session-store";
 import useLensAccounts from "@/hooks/useLensAccounts";
-import { Role } from "@lens-protocol/react";
+import { bigDecimal, Role, TokenStandard } from "@lens-protocol/react";
 import { formatAddress } from "@/lib/utils";
 import { useAccount, usePublicClient, useReadContract } from "wagmi";
 import {
   addAccountManager,
   fetchAccount,
   setAccountMetadata,
+  updateAccountFollowRules,
 } from "@lens-protocol/client/actions";
 import { useParams } from "next/navigation";
 import { Address, encodeFunctionData, fromBytes } from "viem";
@@ -449,18 +450,36 @@ export default function AdminPage() {
   const onAuthenticate = async (account: Account) => {
     console.log("Authenticating", account);
     await authenticate(account.owner, account.address, Role.AccountOwner);
-    // const sessionClient = useSessionStore.getState().session;
-    // if (!sessionClient) {
-    //   throw new Error("Session client not found");
-    // }
+  };
 
-    // const result = await enableSignless(sessionClient);
+  const onAddFollowRule = async () => {
+    if (!storageClient || !session || !walletClient) {
+      throw new Error("Storage client or session not found");
+    }
 
-    // if (result.isErr()) {
-    //   throw new Error("Failed to enable signless", result.error);
-    // }
+    const result = await updateAccountFollowRules(session, {
+      toAdd: {
+        required: [
+          {
+            tokenGatedRule: {
+              token: {
+                currency: evmAddress(DAVINCI_TOKEN_ADDRESS),
+                standard: TokenStandard.Erc20,
+                value: bigDecimal("1"),
+              },
+            },
+          },
+        ],
+      },
+    })
+      .andThen(handleOperationWith(walletClient))
+      .andThen(session.waitForTransaction)
+      .andThen((txHash) => {
+        console.log("UPDATE ACCOUNT FOLLOW RULES TX HASH:", txHash);
+        return fetchAccount(session, { txHash });
+      });
 
-    // console.log("Signless enabled", result.value);
+    console.log("UPDATE ACCOUNT FOLLOW RULES RESULT:", result);
   };
 
   return (
@@ -480,6 +499,7 @@ export default function AdminPage() {
             Update artists metadata
           </Button>
           <Button onClick={updateArtistImage}>Update artists image</Button>
+          <Button onClick={onAddFollowRule}>Add Follow Rule</Button>
         </div>
       )}
       {!session && (
