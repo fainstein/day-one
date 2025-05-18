@@ -152,17 +152,17 @@ export default function ArtistPage() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6 pt-4">
-              <div>
-                <h2 className="text-xl font-bold mb-4 flex items-center">
-                  <LineChart className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
-                  Price History
-                </h2>
-                <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50 h-80">
-                  <CardContent className="p-4 h-full">
-                    <PriceChart priceHistory={artist.priceHistory ?? []} />
-                  </CardContent>
-                </Card>
-              </div>
+              {/* <div> */}
+                {/* <h2 className="text-xl font-bold mb-4 flex items-center"> */}
+                  {/* <LineChart className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" /> */}
+                  {/* Price History */}
+                {/* </h2> */}
+                {/* <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-black/50 h-80"> */}
+                  {/* <CardContent className="p-4 h-full"> */}
+                    {/* <PriceChart priceHistory={artist.priceHistory ?? []} /> */}
+                  {/* </CardContent> */}
+                {/* </Card> */}
+              {/* </div> */}
 
               <div>
                 <h2 className="text-xl font-bold mb-4">Live Metrics</h2>
