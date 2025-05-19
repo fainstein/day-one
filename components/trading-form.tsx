@@ -315,7 +315,7 @@ export default function TradingForm({
   };
 
   const equivalentGHO = artist?.price
-    ? artist?.price * Number.parseFloat(amount)
+    ? artist?.price * Number.parseFloat(amount || "0")
     : 0;
 
   return (
@@ -400,9 +400,7 @@ export default function TradingForm({
             <Button
               onClick={handleSell}
               disabled={
-                isProcessing ||
-                !amount ||
-                Number.parseFloat(amount) <= 0 
+                isProcessing || !amount || Number.parseFloat(amount) <= 0
               }
               className="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700"
             >

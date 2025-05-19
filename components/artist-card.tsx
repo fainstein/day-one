@@ -56,7 +56,7 @@ export default function ArtistCard({ accountAddress }: ArtistCardProps) {
           <h3 className="text-lg font-bold">{artist.name}</h3>
           <div className="flex flex-col items-end">
             <div className="text-lg font-mono font-bold">
-              ${artist.price}
+              ${artist.price?.toFixed(2)}
               {priceChange !== 0 && (
                 <span
                   className={`ml-1 text-xs ${
